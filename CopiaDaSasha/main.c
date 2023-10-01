@@ -1,5 +1,8 @@
 #pragma warning(disable : 4996)
+
 #include "raylib.h"
+
+
 #include "Board.h"
 #include <stdio.h>
 

@@ -850,63 +850,90 @@ void BoardUpdate(Board* board) {
 
         square = PieceSquare(rank, file);
 
-        if (rank >= 0 && rank <= 7 && file >= 0 && file <= 7) {
-            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-                clickTime = clickTime > 0 ? clickTime : GetTime();
-                clicked = true;
+        if (!saxaThinking) {
 
-                /* When the button down time is greater than the click time this
-                 * means that isn't a click anymore, therefore, start to drag
-                 * the piece.
-                 */
-                if (clicked && GetTime() - clickTime > CLICK_TIME
-                    && PieceHasColor(board->squares[square], board->state.whoMoves)) {
-                    board->movingPiece.dragging = true;
-                    board->movingPiece.selecting = false;
+            if (rank >= 0 && rank <= 7 && file >= 0 && file <= 7) {
+                if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+                    clickTime = clickTime > 0 ? clickTime : GetTime();
+                    clicked = true;
 
+                    /* When the button down time is greater than the click time this
+                     * means that isn't a click anymore, therefore, start to drag
+                     * the piece.
+                     */
+                    if (clicked && GetTime() - clickTime > CLICK_TIME
+                        && PieceHasColor(board->squares[square], board->state.whoMoves)) {
+                        board->movingPiece.dragging = true;
+                        board->movingPiece.selecting = false;
+
+                        clickTime = 0;
+                    }
+
+                    if (!board->movingPiece.dragging
+                        && !PieceHasType(board->squares[square], PIECE_NONE)
+                        && PieceHasColor(board->squares[square], board->state.whoMoves))
+                        board->movingPiece.position = square;
+                }
+                else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
+                    if ((board->movingPiece.dragging
+                        || (board->movingPiece.selecting
+                            && board->movingPiece.position != square))
+                        && clicked) {
+                        board->movingPiece.dragging = false;
+                        board->movingPiece.selecting = false;
+
+                        BoardMakeMove(board, board->movingPiece.position, square, true);
+                    }
+
+                    if (clicked && GetTime() - clickTime <= CLICK_TIME
+                        && !board->movingPiece.selecting
+                        && !PieceHasType(board->squares[square], PIECE_NONE)
+                        && PieceHasColor(board->squares[square], board->state.whoMoves)) {
+                        board->movingPiece.position = square;
+
+                        board->movingPiece.selecting = true;
+                        board->movingPiece.dragging = false;
+                    }
+
+                    clicked = false;
                     clickTime = 0;
                 }
-
-                if (!board->movingPiece.dragging
-                    && !PieceHasType(board->squares[square], PIECE_NONE)
-                    && PieceHasColor(board->squares[square], board->state.whoMoves))
-                    board->movingPiece.position = square;
             }
-            else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
-                if ((board->movingPiece.dragging
-                    || (board->movingPiece.selecting
-                        && board->movingPiece.position != square))
-                    && clicked) {
-                    board->movingPiece.dragging = false;
-                    board->movingPiece.selecting = false;
-
-                    BoardMakeMove(board, board->movingPiece.position, square, true);
-                }
-
-                if (clicked && GetTime() - clickTime <= CLICK_TIME
-                    && !board->movingPiece.selecting
-                    && !PieceHasType(board->squares[square], PIECE_NONE)
-                    && PieceHasColor(board->squares[square], board->state.whoMoves)) {
-                    board->movingPiece.position = square;
-
-                    board->movingPiece.selecting = true;
-                    board->movingPiece.dragging = false;
-                }
-
-                clicked = false;
-                clickTime = 0;
+            else {
+                board->movingPiece.dragging = false;
+                board->movingPiece.selecting = false;
             }
-        }
-        else {
-            board->movingPiece.dragging = false;
-            board->movingPiece.selecting = false;
         }
     }
 
     if (isSinglePlayer && !board->state.waitPromotion) {
         if (board->state.whoMoves == PIECE_BLACK) {
-            saxa_move Move = saxamove(*board, saxaDephtBoard, PIECE_BLACK);
-            BoardMakeMove(board, Move.from, Move.to, true);
+
+            if (saxaThinking){
+                if (threadMoveData.finished) {
+                    WaitForSingleObject(saxaMoveThreadId, INFINITE);
+                    CloseHandle(saxaMoveThreadId);
+
+                    saxa_move Move = threadMoveData.move;
+                    BoardMakeMove(board, Move.from, Move.to, true);
+
+                    saxaThinking = false;
+                }
+            }
+            else {
+                threadMoveData.board = *board;
+                threadMoveData.color = PIECE_BLACK;
+                threadMoveData.finished = false;
+                threadMoveData.depth = saxaDephtBoard;
+
+                saxaMoveThreadId = CreateThread(NULL, 0, saxaMoveThreaded, &threadMoveData, 0, NULL);
+
+                if (saxaMoveThreadId != NULL) {
+                    saxaThinking = true;
+                }
+            }
+
+           
         }
     }
 

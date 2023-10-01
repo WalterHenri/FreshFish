@@ -8,6 +8,7 @@
 
 #include "raylib.h"
 
+
 #define BOARD_SQUARE_LENGTH_FACTOR 10.f
 
 #define BOARD_FEN_LENGTH 85
