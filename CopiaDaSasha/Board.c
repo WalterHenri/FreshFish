@@ -635,7 +635,6 @@ void login(int* menuorboard) {
     /*powered by Marcos Mota*/
     /*essa função cria um arquivo caso seja a primeira utilização*/
     if ((file = fopen(path, "rb+")) == NULL) {
-        fclose(file);
         createLoginFile();
         file = fopen(path, "rb+");
     }
