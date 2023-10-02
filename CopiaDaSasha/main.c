@@ -61,17 +61,11 @@ int main(void) {
 
             EndDrawing();
             break;
-        case 2:
-            tutorial(&menuorboard);
-            break;
         case 3:
             gamemode(&menuorboard);
             break;
         case 4:
             gameDificult(&menuorboard);
-            break;
-        case 5:
-            login(&menuorboard);
             break;
         case 6:
             GameBoard(&menuorboard);
