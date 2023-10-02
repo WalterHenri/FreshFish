@@ -14,7 +14,9 @@
  /* a bot that knows how to play chess.*/
 
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <math.h>
 
 #include "Board.h"
@@ -104,8 +106,6 @@ bool saxaThinking = false;
 
 
 HANDLE saxaMoveThreadId;
-bool pruning = false;
-bool moveSorting = false;
 
 
 DWORD WINAPI saxaMoveThreaded(void* data) {
@@ -116,30 +116,20 @@ DWORD WINAPI saxaMoveThreaded(void* data) {
     saxaOpositeColor = (saxaColor == PIECE_WHITE) ? PIECE_BLACK : PIECE_WHITE;
     saxaDepth = moveData->depth;
 
-    /*
-
-    pruning = true;
-    moveSorting = true;
-    moveData->move = finalMoveGrade(moveData->board, moveData->depth, 0, 1);
-    printf("Pruning Sorting Move(%d, %d) %f \n", moveData->move.from, moveData->move.to, moveData->move.grade);*/
-
-    moveSorting = false;
-    pruning = true;
-    moveData->move = finalMoveGrade(moveData->board, moveData->depth, 0, 1);
-    printf("Pruning Move(%d, %d) %f \n", moveData->move.from, moveData->move.to, moveData->move.grade);
-
-    /*
-    moveSorting = false;
-    pruning = false;
-    moveData->move = finalMoveGrade(moveData->board, moveData->depth, 0, 1);
-    printf("Normal Move(%d, %d) %f \n", moveData->move.from, moveData->move.to, moveData->move.grade);
-    */
-
     
+
+    clock_t start, end;
+    double cpu_time_used;
+
+    start = clock();
+    moveData->move = finalMoveGrade(moveData->board, moveData->depth, 0, 1);
+    end = clock();
+    printf("Pruning Sorting Move(%d, %d) %f \n", moveData->move.from, moveData->move.to, moveData->move.grade);
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; // Calculate the CPU time used
+    printf("CPU time used: %f seconds\n", cpu_time_used);
+
+  
     moveData->finished = true;
-
-
-
     return NULL;
 }
 
@@ -150,49 +140,33 @@ saxa_move finalMoveGrade(Board board, int depth, float alpha, float beta) {
 
     saxa_move move = { 0,-1,-1 };
 
-    int moveCounter = 0;
+    //if (moveSorting) {
+        int moveCounter = 0;
 
-    
-
-    if (moveSorting) {
-
-        saxa_move* movesOrder;
-
-        movesOrder = (saxa_move*) malloc(sizeof(saxa_move) * 64 * 64);
-        if (movesOrder == NULL) {
-            printf("F é nulo\n");
-        }
-
-        printf("Rodou a linha %d\n",__LINE__);
+        // Fetchin all moves
+        int size = (64*64) * sizeof(saxa_move);
+        saxa_move* movesOrder = (saxa_move*) malloc(size);
 
         for (int moveFrom = 0; moveFrom < 64; moveFrom++) {
-
+            if (PieceHasType(board.squares[moveFrom], PIECE_NONE)) continue;
+            if (!PieceHasColor(board.squares[moveFrom], board.state.whoMoves))  continue;
             for (int moveTo = 0; moveTo < 64; moveTo++) {
                 if (board.move.list[moveFrom][moveTo] == true) {
-                    
-
                     double grade = 0;
 
                     grade = moveGrade(board, moveFrom, moveTo, 0, alpha, beta);
-                    saxa_move xMove;
-                    xMove.from = moveFrom;
-                    xMove.to = moveTo;
-                    xMove.grade = grade;
-
-                    printf("MoveCounter = %d :%d\n", moveCounter, __LINE__);
-                    movesOrder[moveCounter] = xMove;
-                    printf("Botou dentro do movesOrder :%d\n", __LINE__);
+                    movesOrder[moveCounter].from = moveFrom;
+                    movesOrder[moveCounter].to = moveTo;
+                    movesOrder[moveCounter].grade = grade;
                     moveCounter++;
                 }
             }
         }
-
-        printf("Rodou a linha antes do REalloc %d\n", __LINE__);
-        movesOrder = (saxa_move*)realloc(movesOrder, sizeof(saxa_move) * moveCounter);
-        printf("Rodou a linha do REalloc %d\n", __LINE__);
-
-        // Ordering
-        /*
+        if (moveCounter != 0) {
+            movesOrder = (saxa_move*)realloc(movesOrder, sizeof(saxa_move) * moveCounter);
+        }
+        
+        // Ordering moves based on grade
         if (board.state.whoMoves == PIECE_WHITE) {
             for (int i = 0; i < moveCounter; i++) {
                 for (int j = 1; j < moveCounter - i; j++) {
@@ -214,62 +188,71 @@ saxa_move finalMoveGrade(Board board, int depth, float alpha, float beta) {
                         saxa_move temp = movesOrder[j - 1];
                         movesOrder[j - 1] = movesOrder[j];
                         movesOrder[j] = temp;
+
                     }
                 }
             }
         }
-        */
 
-
-        for (int i = 0; i < moveCounter; i++) {
-
+        
+        if (board.state.whoMoves == saxaColor) {
+            move.grade = 0;
+        }
+        else {
+            move.grade = 1;
+        }
+        
+      
+        for (int i = 0; i < moveCounter ; i++) {
             int moveFrom = movesOrder[i].from;
             int moveTo = movesOrder[i].to;
+
+            if (!board.state.whoMoves == PIECE_WHITE) {
+                moveFrom = movesOrder[moveCounter-1-i].from;
+                moveTo = movesOrder[moveCounter - 1 - i].to;
+            }
 
             double grade = moveGrade(board, moveFrom, moveTo, depth, alpha, beta);
 
             if (board.state.whoMoves == saxaColor) {
-                if (grade > move.grade || i == 0) {
+                if (grade > move.grade) {
                     move.grade = grade;
                     move.from = moveFrom;
                     move.to = moveTo;
                 }
 
-                if (pruning) {
+
                     alpha = max(alpha, grade);
                     if (beta <= alpha) {
-                        moveFrom = 64;
                         break;
                     }
-                }
+                
 
             }
-            else {
-                if (grade < move.grade || i == 0) {
+            else { 
+                if (grade < move.grade) {
                     move.grade = grade;
                     move.from = moveFrom;
                     move.to = moveTo;
                 }
 
-                if (pruning) {
+
                     beta = min(beta, grade);
                     if (beta <= alpha) {
-                        moveFrom = 64;
                         break;
                     }
-                }
+                
             }
             
             
         }
-
+        
         free(movesOrder);
+        
+    //}
+    //else {
 
-        return move;
-
-    }
-    else {
-
+        /*
         for (int moveFrom = 0; moveFrom < 64; moveFrom++) {
 
             if (PieceHasType(board.squares[moveFrom], PIECE_NONE)) continue;
@@ -277,12 +260,12 @@ saxa_move finalMoveGrade(Board board, int depth, float alpha, float beta) {
 
             for (int moveTo = 0; moveTo < 64; moveTo++) {
 
-                /*testing all the possible moves and storing the bigger value in a
-                function,
-                all these values are between zero and one, thanks to sigmoid,
-                that means that we have an infinite value for checkmate or
-                negative infinite value for an oponnent checkmate, after all,
-                what is worse than losing a chess game?*/
+                //testing all the possible moves and storing the bigger value in a
+                //function,
+                //all these values are between zero and one, thanks to sigmoid,
+                //that means that we have an infinite value for checkmate or
+                //negative infinite value for an oponnent checkmate, after all,
+                //what is worse than losing a chess game?
 
                 if (board.move.list[moveFrom][moveTo] == true) {
                     moveCounter++;
@@ -322,8 +305,8 @@ saxa_move finalMoveGrade(Board board, int depth, float alpha, float beta) {
                 }
             }
         }
-
-    }
+        */
+    //}
 
     return move;
 }
