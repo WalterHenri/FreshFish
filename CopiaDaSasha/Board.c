@@ -925,6 +925,7 @@ void BoardUpdate(Board* board) {
                 threadMoveData.color = PIECE_BLACK;
                 threadMoveData.finished = false;
                 threadMoveData.depth = saxaDephtBoard;
+               // threadMoveData.depth = 3;
 
                 saxaMoveThreadId = CreateThread(NULL, 0, saxaMoveThreaded, &threadMoveData, 0, NULL);
 
