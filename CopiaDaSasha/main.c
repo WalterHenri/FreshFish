@@ -6,7 +6,7 @@
 #include "Board.h"
 #include <stdio.h>
 
-#define SCREEN_TITLE  "Xuxa"
+#define SCREEN_TITLE  "FreshFish"
 
 
 int main(void) {
