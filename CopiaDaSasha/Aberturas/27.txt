@@ -1,0 +1,3 @@
+e4 c5 Nc3 Nc6 g3
+e4 c5 Nc3 Nc6 g3 g6
+

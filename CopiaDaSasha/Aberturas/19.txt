@@ -1,0 +1,4 @@
+d4 Nf6 c4 g6 Nc3 d5
+d4 Nf6 c4 g6 Nc3 d5 Qb3 dxc4 Qxc4 Bg7 e4 O-O Nf3 h6
+
+
