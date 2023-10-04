@@ -1,0 +1,3 @@
+e4 c5 Nf3 e6 d4 cxd4 Nxd4 a6 Nc3 Qc7 Be2 Nf6 O-O Be7 f4 d6 Kh1 O-O Qe1 Nc6 Be3 Re8
+e4 c5 Nf3 e6 d4 cxd4 Nxd4 a6 Nc3 Qc7 a4 Nf6 Be2 Bb4 Qd3 Nxe4 Qxe4 Bxc3+ Kf1
+
