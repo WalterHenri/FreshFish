@@ -1,6 +1,5 @@
 #pragma once
-#ifndef SAXA_HPP_INCLUDED
-#define SAXA_HPP_INCLUDED
+#include "includes.h"
 
 /**            SAXA
 
@@ -13,40 +12,6 @@
 
  /* a bot that knows how to play chess.*/
 
-#include <ctype.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <math.h>
-
-#include "Board.h"
-#include "Piece.h"
-
-#define IMESUARABLE 1
-#define WORST_THING_POSSIBLE 0
-#define BEST_THING_POSSIBLE 1
-
-/*global variables*/
-
-int pawnValue = 1;
-int horseValue = 3;
-int bishopValue = 3;
-int rookValue = 5;
-int queenValue = 9;
-int kingValue = IMESUARABLE;
-
-float squareValue = 0.1;
-
-int saxaDepth; /// warning!!!
-
-int saxaColor;
-int saxaOpositeColor;
-
-typedef struct {
-    double grade;
-    int to;
-    int from;
-} saxa_move;
 
 ///this is the call function for a SAXA play
 
@@ -111,8 +76,6 @@ DWORD WINAPI saxaMoveThreaded(void* data) {
     moveData->finished = true;
     return NULL;
 }
-
-
 
 
 saxa_move finalMoveGrade(Board board, int depth, float alpha, float beta) {
@@ -227,65 +190,7 @@ saxa_move finalMoveGrade(Board board, int depth, float alpha, float beta) {
         }
         
         free(movesOrder);
-        
-    //}
-    //else {
 
-        /*
-        for (int moveFrom = 0; moveFrom < 64; moveFrom++) {
-
-            if (PieceHasType(board.squares[moveFrom], PIECE_NONE)) continue;
-            if (!PieceHasColor(board.squares[moveFrom], board.state.whoMoves))  continue;
-
-            for (int moveTo = 0; moveTo < 64; moveTo++) {
-
-                //testing all the possible moves and storing the bigger value in a
-                //function,
-                //all these values are between zero and one, thanks to sigmoid,
-                //that means that we have an infinite value for checkmate or
-                //negative infinite value for an oponnent checkmate, after all,
-                //what is worse than losing a chess game?
-
-                if (board.move.list[moveFrom][moveTo] == true) {
-                    moveCounter++;
-                    double grade = moveGrade(board, moveFrom, moveTo, depth, alpha, beta);
-
-                    if (board.state.whoMoves == saxaColor) {
-                        if (grade > move.grade || moveCounter == 1) {
-                            move.grade = grade;
-                            move.from = moveFrom;
-                            move.to = moveTo;
-                        }
-
-                        if (pruning) {
-                            alpha = max(alpha, grade);
-                            if (beta <= alpha) {
-                                moveFrom = 64;
-                                break;
-                            }
-                        }
-
-                    }
-                    else {
-                        if (grade < move.grade || moveCounter == 1) {
-                            move.grade = grade;
-                            move.from = moveFrom;
-                            move.to = moveTo;
-                        }
-
-                        if (pruning) {
-                            beta = min(beta, grade);
-                            if (beta <= alpha) {
-                                moveFrom = 64;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        */
-    //}
 
     return move;
 }
@@ -297,16 +202,32 @@ double moveGrade(Board board, int from, int to, int depth, float alpha, float be
     if he finds a mate stop the search,
     call a function that call this function while the depth
     is not 0,
-    returns the value of the last position from the tree*/
+    returns the value of the last position from the tree*/ 
 
 
     BoardMakeMove(&board, from, to, true);
+
 
     if (BoardKingInMate(board, saxaOpositeColor)) {
         return BEST_THING_POSSIBLE;
     }
     else if (BoardKingInMate(board, saxaColor)) {
         return WORST_THING_POSSIBLE;
+    }
+    else if (board.state.waitPromotion) {
+        board.state.waitPromotion = 0;
+        double bestGrade = 0;
+        int index = 2;
+        for (int i = 2; i <= 5; i++) {
+            board.squares[to] = PieceGetColor(board.squares[to]) + i;
+            double g = finalMoveGrade(board, depth - 1, alpha, beta).grade;
+            if (g > bestGrade) {
+                bestGrade = g;
+                index = i;
+            }
+        }
+        board.squares[to] = index;
+        return bestGrade;
     }
 
 

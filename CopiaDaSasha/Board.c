@@ -829,14 +829,8 @@ void BoardUpdate(Board* board) {
         BoardResize(board, GetScreenWidth(), GetScreenHeight());
 
     if (board->state.waitPromotion) {
-        updatePromotionMenu(board);
-
-        if (!board->state.waitPromotion) {
-            if (board->state.whoMoves == PIECE_BLACK) {
-                saxa_move Move = saxamove(*board, saxaDephtBoard, PIECE_BLACK);
-                BoardMakeMove(board, Move.from, Move.to, true);
-            }
-        }
+        if(isSinglePlayer)
+            updatePromotionMenu(board);
     }
     else if (BoardKingInMate(*board, board->state.whoMoves)) {
         // Essa parte está sendo implementada em drawMateWindow
@@ -1643,6 +1637,16 @@ static void drawDraggingPiece(Board board, Rectangle drawPosition) {
     DrawTexturePro(board.pieceSpriteSheet, spritePosition, drawPosition, (Vector2){ 0, 0 }, 0, WHITE);
 }
 
+
+int boardInDraw(Board * board) {
+
+    if (board->move.count <= 0) {
+        return 1;
+    }
+    return 0;
+}
+
+
 static void drawMateWindow(Board * board, int * menu) {
     static bool click = false;
     static bool mouseOver = false;
@@ -1682,7 +1686,7 @@ static void drawMateWindow(Board * board, int * menu) {
     const int wonFontSize = windowRectangle.height / 8;
     const int btnFontSize = windowRectangle.height / (12 + mouseOver * 2);
 
-    const char* wonText = board->state.whoMoves == PIECE_WHITE ? "PRETO VENCEU!" : "BRANCO VENCEU!";
+    char* wonText = board->state.whoMoves == PIECE_WHITE ? "PRETO VENCEU!" : "BRANCO VENCEU!";
     const int wonTextPosX = windowRectangle.x + windowRectangle.width / 2 - MeasureText(wonText, wonFontSize) / 2.f;
     const int wonTextPosY = (spritePosition.y + spritePosition.height) * 1.004f;
 
@@ -1695,6 +1699,9 @@ static void drawMateWindow(Board * board, int * menu) {
 
     if (!BoardKingInMate(*board, board->state.whoMoves))
         return;
+    else if (boardInDraw(board)) {
+        strcpy(wonText, "STALEMATE KKK");
+    }
 
     DrawRectangleRounded(windowRectangle, 0.2f, 0, board->squareBlackColor);
     DrawRectangleRoundedLines(windowRectangle, 0.2f, 0, 3, board->squareWhiteColor);
@@ -1754,7 +1761,7 @@ static void drawPromotionMenu(Board board) {
 
     if (!board.state.waitPromotion)
         return;
-
+    
     DrawRectangleRounded(menuRectangle, 0.2f, 0, board.squareBlackColor);
     DrawRectangleRoundedLines(menuRectangle, 0.2f, 0, 3, board.squareWhiteColor);
 

@@ -1,18 +1,8 @@
 #pragma once
-
-/**            SAXA
-
- Sistema Artificial de Xadrez Academico.
- The greatest chess engine of all time,
-
- XUXA built in,
-
- **/
-
- /* a bot that knows how to play chess.*/
-
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <math.h>
 
 #include "Board.h"
