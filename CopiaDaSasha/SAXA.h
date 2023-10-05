@@ -13,14 +13,7 @@
  /* a bot that knows how to play chess.*/
 
 
-///this is the call function for a SAXA play
 
-saxa_move saxamove(Board board, int depth, int saxa_color) {
-    saxaColor = saxa_color;
-    saxaOpositeColor = (saxaColor == PIECE_WHITE) ? PIECE_BLACK : PIECE_WHITE;
-    saxaDepth = depth;
-    return finalMoveGrade(board, depth, 0, 1);
-}
 
 struct ThreadMoveData {
     Board board;
@@ -34,7 +27,7 @@ struct ThreadMoveData threadMoveData;
 
 bool saxaThinking = false;
 
-
+// Biblioteca do windows pra fazer thread
 #if defined(_WIN32)           
 #define NOGDI             // All GDI defines and routines
 #define NOUSER            // All USER defines and routines
@@ -47,12 +40,19 @@ bool saxaThinking = false;
 #undef far
 #endif
 
+///this is the call function for a SAXA play
 
+saxa_move backtrackingMove(Board board, int depth, int saxa_color) {
+    saxaColor = saxa_color;
+    saxaOpositeColor = (saxaColor == PIECE_WHITE) ? PIECE_BLACK : PIECE_WHITE;
+    saxaDepth = depth;
+    return positionBestMove(board, depth, 0, 1);
+}
 
 HANDLE saxaMoveThreadId;
 
 
-DWORD WINAPI saxaMoveThreaded(void* data) {
+DWORD WINAPI backtrackingMoveThreaded(void* data) {
 
     struct ThreadMoveData* moveData = (struct ThreadMoveData*)data;
 
@@ -66,7 +66,7 @@ DWORD WINAPI saxaMoveThreaded(void* data) {
     double cpu_time_used;
 
     start = clock();
-    moveData->move = finalMoveGrade(moveData->board, moveData->depth, 0, 1);
+    moveData->move = positionBestMove(moveData->board, moveData->depth, 0, 1);
     end = clock();
     printf("Pruning Sorting Move(%d, %d) %f \n", moveData->move.from, moveData->move.to, moveData->move.grade);
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; // Calculate the CPU time used
@@ -78,16 +78,16 @@ DWORD WINAPI saxaMoveThreaded(void* data) {
 }
 
 
-saxa_move finalMoveGrade(Board board, int depth, float alpha, float beta) {
+saxa_move positionBestMove(Board board, int depth, float alpha, float beta) {
 
     saxa_move move = { 0,-1,-1 };
 
-    //if (moveSorting) {
         int moveCounter = 0;
 
         // Fetchin all moves
-        int size = (64*64) * sizeof(saxa_move);
-        saxa_move* movesOrder = (saxa_move*) malloc(size);
+        
+        int size = 150;
+        saxa_move* movesOrder = (saxa_move*) malloc(size * sizeof(saxa_move));
 
         for (int moveFrom = 0; moveFrom < 64; moveFrom++) {
             if (PieceHasType(board.squares[moveFrom], PIECE_NONE)) continue;
@@ -97,6 +97,13 @@ saxa_move finalMoveGrade(Board board, int depth, float alpha, float beta) {
                     double grade = 0;
 
                     grade = moveGrade(board, moveFrom, moveTo, 0, alpha, beta);
+                    
+
+                    if (moveCounter >= size) {
+                        printf("Overload Moves: %d Size: %d\n", moveCounter, size);
+                        movesOrder = (saxa_move*)realloc(movesOrder, sizeof(saxa_move) * (size + 30));
+                    }
+
                     movesOrder[moveCounter].from = moveFrom;
                     movesOrder[moveCounter].to = moveTo;
                     movesOrder[moveCounter].grade = grade;
@@ -104,10 +111,12 @@ saxa_move finalMoveGrade(Board board, int depth, float alpha, float beta) {
                 }
             }
         }
-        if (moveCounter != 0) {
+        
+        if (moveCounter > 0) {
             movesOrder = (saxa_move*)realloc(movesOrder, sizeof(saxa_move) * moveCounter);
         }
-        
+
+
         // Ordering moves based on grade
         if (board.state.whoMoves == PIECE_WHITE) {
             for (int i = 0; i < moveCounter; i++) {
@@ -195,6 +204,8 @@ saxa_move finalMoveGrade(Board board, int depth, float alpha, float beta) {
     return move;
 }
 
+
+/// Returns the evaluation grade of the move in the position
 double moveGrade(Board board, int from, int to, int depth, float alpha, float beta) {
 
     /*right here is when the kid cry and his mom can`t see,
@@ -208,10 +219,10 @@ double moveGrade(Board board, int from, int to, int depth, float alpha, float be
     BoardMakeMove(&board, from, to, true);
 
 
-    if (BoardKingInMate(board, saxaOpositeColor)) {
+    if (BoardKingInMate(&board, saxaOpositeColor)) {
         return BEST_THING_POSSIBLE;
     }
-    else if (BoardKingInMate(board, saxaColor)) {
+    else if (BoardKingInMate(&board, saxaColor)) {
         return WORST_THING_POSSIBLE;
     }
     else if (board.state.waitPromotion) {
@@ -220,7 +231,7 @@ double moveGrade(Board board, int from, int to, int depth, float alpha, float be
         int index = 2;
         for (int i = 2; i <= 5; i++) {
             board.squares[to] = PieceGetColor(board.squares[to]) + i;
-            double g = finalMoveGrade(board, depth - 1, alpha, beta).grade;
+            double g = positionBestMove(board, depth - 1, alpha, beta).grade;
             if (g > bestGrade) {
                 bestGrade = g;
                 index = i;
@@ -232,15 +243,15 @@ double moveGrade(Board board, int from, int to, int depth, float alpha, float be
 
 
     if (depth > 0) {
-        return finalMoveGrade(board, depth - 1, alpha, beta).grade;
+        return positionBestMove(board, depth - 1, alpha, beta).grade;
     }
     else
-        return evaluatePosition(board);
+        return evaluatePosition(&board);
 
 }
 
 
-double evaluatePosition(Board board) {
+double evaluatePosition(Board* board) {
 
     /*this evaluate position is simple but effective,
     is impressive what SAXA can do just counting material,
@@ -255,8 +266,8 @@ double evaluatePosition(Board board) {
     for (int rank = 0; rank < 8; rank++) {
         for (int file = 0; file < 8; file++) {
 
-            int pieceType = PieceGetType(board.squares[rank * 8 + file]);
-            int pieceColor = PieceGetColor(board.squares[rank * 8 + file]);
+            int pieceType = PieceGetType(board->squares[rank * 8 + file]);
+            int pieceColor = PieceGetColor(board->squares[rank * 8 + file]);
             sinal = (pieceColor == saxaColor) ? 1 : -1;
 
             switch (pieceType) {
@@ -285,11 +296,11 @@ double evaluatePosition(Board board) {
     //counting squares of enemies attacks
 
     for (int i = 0; i < 64; i++) {
-        if (board.move.pseudoLegalMoves[i] == true) {
-            if (board.state.whoMoves != saxaColor) {
+        if (board->move.pseudoLegalMoves[i] == true) {
+            if (board->state.whoMoves != saxaColor) {
                 grade += squareValue;
             }
-            else if (board.state.whoMoves == saxaColor) {
+            else if (board->state.whoMoves == saxaColor) {
                 grade -= squareValue;
             }
         }
