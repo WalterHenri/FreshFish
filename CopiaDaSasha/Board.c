@@ -573,6 +573,8 @@ bool _BoardLoadFEN(Board* board) {
     return BoardLoadFEN(board, BOARD_FEN_DEFAULT);
 }
 
+
+
 bool BoardSaveFEN(Board* board) {
 
     const char pieces_data[6] = {
@@ -741,6 +743,8 @@ bool BoardMakeMove(Board* board, int from, int to, bool updateWhoMoves) {
         /* King side rooks */
         else if (from == 63 || from == 7)
             castlingSide = CASTLING_QUEEN_SIDE;
+        else
+            castlingSide = CASTLING_NONE;
 
         if (PieceHasColor(board->squares[from], PIECE_WHITE))
             board->state.castlingWhite &= castlingSide;
@@ -829,7 +833,7 @@ void BoardUpdate(Board* board) {
         BoardResize(board, GetScreenWidth(), GetScreenHeight());
 
     if (board->state.waitPromotion) {
-        if(isSinglePlayer)
+        if(!isSinglePlayer)
             updatePromotionMenu(board);
     }
     else if (BoardKingInMate(*board, board->state.whoMoves)) {
