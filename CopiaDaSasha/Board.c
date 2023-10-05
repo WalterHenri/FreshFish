@@ -368,34 +368,37 @@ void gameDificult(int* menuorboard) {
     float screenWidth = GetScreenWidth();
     float screenHeight = GetScreenHeight();
 
+    
 
-    float botao1X = screenWidth / 2 - screenWidth / 8;
-
-    float botao1Y = screenHeight / 4 - screenHeight / 8;
-
-    float botao2Y = screenHeight / 4 + screenHeight / 8;
-
-    float botao3Y = screenHeight / 4 + screenHeight / 8 * 3;
+    float botaoWidth = screenWidth / 4;
+    float botaoHeight = screenHeight / 8;
+    float botaoSpacing = (screenHeight / 12) + botaoHeight;
+    float botaoX = screenWidth / 2 - botaoWidth/2;
+    float botaoY = (screenHeight - ((botaoSpacing)*3 + botaoHeight))/2;
 
     int sizeOftext = screenHeight / 30;
 
-    Rectangle botao1 = { botao1X, botao1Y, screenWidth / 4, screenHeight / 8 };
-    Rectangle botao2 = { botao1X, botao2Y, screenWidth / 4, screenHeight / 8 };
-    Rectangle botao3 = { botao1X, botao3Y, screenWidth / 4, screenHeight / 8 };
+    Rectangle botao1 = { botaoX, botaoY, botaoWidth, botaoHeight};
+    Rectangle botao2 = { botaoX, botaoY + botaoSpacing, botaoWidth, botaoHeight};
+    Rectangle botao3 = { botaoX, botaoY + botaoSpacing*2, botaoWidth, botaoHeight};
+    Rectangle botao4 = { botaoX, botaoY + botaoSpacing*3, botaoWidth, botaoHeight};
 
     DrawRectangleRounded(botao1, 0.5, sizeOftext, DARKGREEN);
-    DrawText("Fácil", botao1X + 30, botao1Y + 30, sizeOftext, WHITE);
+    DrawText("Facil", botaoX + 30, botaoY + 30, sizeOftext, WHITE);
 
     DrawRectangleRounded(botao2, 0.5, sizeOftext, DARKGREEN);
-    DrawText("Médio", botao1X + 30, botao2Y + 30, sizeOftext, WHITE);
+    DrawText("Medio", botaoX + 30, botaoY + botaoSpacing + 30, sizeOftext, WHITE);
 
     DrawRectangleRounded(botao3, 0.5, sizeOftext, DARKGREEN);
-    DrawText("Dificil", botao1X + 30, botao3Y + 30, sizeOftext, WHITE);
+    DrawText("Dificil", botaoX + 30, botaoY + botaoSpacing * 2 + 30, sizeOftext, WHITE);
+
+    DrawRectangleRounded(botao4, 0.5, sizeOftext, DARKGREEN);
+    DrawText("Nao consigo vencer isso", botaoX + 30, botaoY + botaoSpacing * 3 + 30, sizeOftext, WHITE);
 
     if (CheckCollisionPointRec(mousePoint, botao1)) {
 
         DrawRectangleRounded(botao1, 0.5, sizeOftext, GREEN);
-        DrawText("Fácil", botao1X + 30, botao1Y + 30, sizeOftext, WHITE);
+        DrawText("Facil", botaoX + 30, botaoY + 30, sizeOftext, WHITE);
 
         if (IsMouseButtonPressed(0)) {
             isSinglePlayer = 1;
@@ -407,7 +410,7 @@ void gameDificult(int* menuorboard) {
     if (CheckCollisionPointRec(mousePoint, botao2)) {
 
         DrawRectangleRounded(botao2, 0.5, sizeOftext, YELLOW);
-        DrawText("vai travar um pouco em ...", botao1X + 30, botao2Y + 30, sizeOftext, WHITE);
+        DrawText("vai travar um pouco em ...", botaoX + 30, botaoY + botaoSpacing+ 30, sizeOftext, WHITE);
         if (IsMouseButtonPressed(0)) {
 
             isSinglePlayer = 1;
@@ -419,10 +422,21 @@ void gameDificult(int* menuorboard) {
     if (CheckCollisionPointRec(mousePoint, botao3)) {
 
         DrawRectangleRounded(botao3, 0.5, sizeOftext, RED);
-        DrawText("vai travar demais !!!", botao1X + 30, botao3Y + 30, sizeOftext, WHITE);
+        DrawText("vai travar demais !!!", botaoX + 30, botaoY + botaoSpacing * 2 + 30, sizeOftext, WHITE);
         if (IsMouseButtonPressed(0)) {
             isSinglePlayer = 1;
             saxaDephtBoard = 2;
+            *menuorboard = 1;
+        }
+    }
+
+    if (CheckCollisionPointRec(mousePoint, botao4)) {
+
+        DrawRectangleRounded(botao4, 0.5, sizeOftext, GRAY);
+        DrawText("Tra.... vo...u...", botaoX + 30, botaoY + botaoSpacing * 3 + 30, sizeOftext, WHITE);
+        if (IsMouseButtonPressed(0)) {
+            isSinglePlayer = 1;
+            saxaDephtBoard = 3;
             *menuorboard = 1;
         }
     }
@@ -759,18 +773,18 @@ bool BoardMakeMove(Board* board, int from, int to, bool updateWhoMoves) {
     return true;
 }
 
-bool BoardKingInCheck(Board board, int kingColor) {
+bool BoardKingInCheck(Board* board, int kingColor) {
     for (int square = 0; square < 64; square++)
-        if (board.move.pseudoLegalMoves[square]
-            && PieceHasType(board.squares[square], PIECE_KING)
-            && PieceHasColor(board.squares[square], kingColor))
+        if (board->move.pseudoLegalMoves[square]
+            && PieceHasType(board->squares[square], PIECE_KING)
+            && PieceHasColor(board->squares[square], kingColor))
             return true;
 
     return false;
 }
 
-bool BoardKingInMate(Board board, int kingColor) {
-    if (BoardKingInCheck(board, kingColor) && board.move.count == 0)
+bool BoardKingInMate(Board* board, int kingColor) {
+    if (BoardKingInCheck(board, kingColor) && board->move.count == 0)
         return true;
 
     return false;
@@ -836,7 +850,7 @@ void BoardUpdate(Board* board) {
         if(!isSinglePlayer)
             updatePromotionMenu(board);
     }
-    else if (BoardKingInMate(*board, board->state.whoMoves)) {
+    else if (BoardKingInMate(board, board->state.whoMoves)) {
         // Essa parte está sendo implementada em drawMateWindow
     }
     else if (board->backButtonClicked) {
@@ -923,9 +937,8 @@ void BoardUpdate(Board* board) {
                 threadMoveData.color = PIECE_BLACK;
                 threadMoveData.finished = false;
                 threadMoveData.depth = saxaDephtBoard;
-               // threadMoveData.depth = 3;
 
-                saxaMoveThreadId = CreateThread(NULL, 0, saxaMoveThreaded, &threadMoveData, 0, NULL);
+                saxaMoveThreadId = CreateThread(NULL, 0, backtrackingMoveThreaded, &threadMoveData, 0, NULL);
 
                 if (saxaMoveThreadId != NULL) {
                     saxaThinking = true;
@@ -1096,7 +1109,7 @@ static void generateKingMoves(Board * board, int square, bool legalMove) {
 
     for (int direction = 0; direction < 8; direction++) {
         /* If the king is in check can't do any cast this turn */
-        if (BoardKingInCheck(*board, PieceGetColor(board->squares[square])))
+        if (BoardKingInCheck(board, PieceGetColor(board->squares[square])))
             kingMoves = 1;
         /* If the move is to left and can cast to queen side */
         else if (direction == 6 && castlingQueen)
@@ -1534,7 +1547,7 @@ static void drawPiece(Board board, Rectangle drawPosition, int square, Color col
 
     /* Draw a red square if the king is in check */
     if (PieceHasType(board.squares[square], PIECE_KING)
-        && BoardKingInCheck(board, PieceGetColor(board.squares[square])))
+        && BoardKingInCheck(&board, PieceGetColor(board.squares[square])))
         DrawRectangleRec(drawPosition, RED);
 
     /* Draw the piece image if isn't dragging any piece or if is dragging
@@ -1701,7 +1714,7 @@ static void drawMateWindow(Board * board, int * menu) {
     btnRectangle.width = MeasureText(btnText, btnFontSize) * 1.5f;
     btnRectangle.x += windowRectangle.width / 2.f - btnRectangle.width / 2.f;
 
-    if (!BoardKingInMate(*board, board->state.whoMoves))
+    if (!BoardKingInMate(board, board->state.whoMoves))
         return;
     else if (boardInDraw(board)) {
         strcpy(wonText, "STALEMATE KKK");

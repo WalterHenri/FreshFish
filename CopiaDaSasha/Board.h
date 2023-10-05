@@ -132,9 +132,9 @@ void BoardResize(Board* board, int screenWidth, int screenHeight);
 
 bool BoardMakeMove(Board* board, int from, int to, bool updateWhoMoves);
 
-bool BoardKingInCheck(Board board, int kingColor);
+bool BoardKingInCheck(Board* board, int kingColor);
 
-bool BoardKingInMate(Board board, int kingColor);
+bool BoardKingInMate(Board* board, int kingColor);
 
 int BoardPerft(Board* board, int depth);
 
