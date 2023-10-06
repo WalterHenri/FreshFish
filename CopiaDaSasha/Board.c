@@ -469,7 +469,7 @@ void _BoardInit(Board* board) {
     board->backButtonClicked = false;
 
     memset(&board->movingPiece, 0, sizeof board->movingPiece);
-    memset(&board->chessBoard.move, 0, sizeof board->movingPiece);
+    memset(&board->chessBoard.move, 0, sizeof board->chessBoard.move);
 
     BoardLoadFEN(&board->chessBoard, BOARD_FEN_DEFAULT);
 }

@@ -140,10 +140,10 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
 
         
         if (board.state.whoMoves == saxaColor) {
-            move.grade = 0;
+            move.grade = -1;
         }
         else {
-            move.grade = 1;
+            move.grade = 2;
         }
         
       
