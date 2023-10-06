@@ -23,11 +23,9 @@ int saxaDephtBoard;
 int quadros;
 bool isSinglePlayer;
 
-Texture2D xuxinha;
-Texture2D mao;
+Texture2D background;
+Texture2D background2;
 Texture2D logo;
-Texture2D txutxucao;
-Texture2D joseval;
 Texture2D pecas;
 
 
@@ -62,14 +60,11 @@ static void drawPromotionMenu(Board board);
 
 void menuInit() {
     //upload das imagens usadas
-    xuxinha = LoadTexture("./assets/xuxinha.png");
-    mao = LoadTexture("./assets/mao.png");
-    logo = LoadTexture("./assets/logo.png");
-    xuxinha = LoadTexture("./assets/xuxinha.png");
-    txutxucao = LoadTexture("./assets/txutxucao ufs.png");
-    joseval = LoadTexture("./assets/professorjoseval.png");
-    pecas = LoadTexture("./assets/chess_pieces.png");
 
+    logo = LoadTexture("./assets/FreshFishLogo.png");
+    pecas = LoadTexture("./assets/chess_pieces.png");
+    background = LoadTexture("./assets/initialScreen.png");
+    background2 = LoadTexture("./assets/menuScreen.png");
 }
 
 void reverse(char s[]) {
@@ -101,7 +96,7 @@ void myitoa(int n, char s[]) {
 void menu(int* menuorboard) {
     /*
         usamos essas variaveis para pegar o tamanho da tela e baseamos
-    o tamanho do texto das sprites e as posições nessas variáveis.
+    o tamanho do texto das sprites e as posiÃ§Ãµes nessas variÃ¡veis.
     */
 
     float screenHeight = GetScreenHeight();
@@ -131,14 +126,13 @@ void menu(int* menuorboard) {
 
     BeginDrawing();
     ClearBackground(BLACK);
+    DrawTexture(background,0,0,WHITE);
 
     DrawRectangleLines(xOfButtons, YOfButtons, buttonWidth, buttonHeight, PINK);
 
     DrawText("Jogar", xOfButtons + inBetweenTextX, YOfButtons + inBetweenTextY, sizeOftext, WHITE);
 
     if (CheckCollisionPointRec(mousePoint, rec1)) {
-
-        DrawTexture(mao, handX, YOfButtons, RAYWHITE);
         if (IsMouseButtonPressed(0)) {
             *menuorboard = 3;
         }
@@ -151,7 +145,6 @@ void menu(int* menuorboard) {
 
     if (CheckCollisionPointRec(mousePoint, rec2)) {
 
-        DrawTexture(mao, handX, YOfButtons + inBetween, RAYWHITE);
         if (IsMouseButtonPressed(0)) {
             *menuorboard = 6;
             selectionB = 0;
@@ -168,7 +161,7 @@ void menu(int* menuorboard) {
     );
 
     if (CheckCollisionPointRec(mousePoint, rec5)) {
-        DrawTexture(mao, handX, YOfButtons + (inBetween * 4), RAYWHITE);
+       
         if (IsMouseButtonPressed(0))
             exit(0);
 
@@ -444,12 +437,130 @@ void gameDificult(int* menuorboard) {
     EndDrawing();
 }
 
+void updateSetPosition(Board* board) {
+#define CLICK_TIME 0.15
+    static double clickTime = 0;
+    static bool clicked = false;
+
+    int rank;
+    int file;
+    int square;
+
+    /* Resize the board if screen size has changed */
+    if (IsWindowResized())
+        BoardResize(board, GetScreenWidth(), GetScreenHeight());
+
+    if (board->backButtonClicked) {
+        // Essa parte estÃ¡ sendo implementada em backButton
+    }
+    else {
+        rank = (GetMouseY() - board->drawPosition.y) / board->squareLength;
+        file = (GetMouseX() - board->drawPosition.x) / board->squareLength;
+
+        square = PieceSquare(rank, file);
+
+
+
+        if (rank >= 0 && rank <= 7 && file >= 0 && file <= 7) {
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+                clickTime = clickTime > 0 ? clickTime : GetTime();
+                clicked = true;
+
+                /* When the button down time is greater than the click time this
+                    * means that isn't a click anymore, therefore, start to drag
+                    * the piece.
+                    */
+                if (clicked && GetTime() - clickTime > CLICK_TIME
+                    && PieceHasColor(board->squares[square], board->state.whoMoves)) {
+                    board->movingPiece.dragging = true;
+                    board->movingPiece.selecting = false;
+
+                    clickTime = 0;
+                }
+
+                if (!board->movingPiece.dragging
+                    && !PieceHasType(board->squares[square], PIECE_NONE)
+                    && PieceHasColor(board->squares[square], board->state.whoMoves))
+                    board->movingPiece.position = square;
+            }
+            else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
+                if ((board->movingPiece.dragging
+                    || (board->movingPiece.selecting
+                        && board->movingPiece.position != square))
+                    && clicked) {
+                    board->movingPiece.dragging = false;
+                    board->movingPiece.selecting = false;
+
+                    board->squares[square] = board->squares[board->movingPiece.position];
+
+                }
+
+                if (clicked && GetTime() - clickTime <= CLICK_TIME
+                    && !board->movingPiece.selecting
+                    && !PieceHasType(board->squares[square], PIECE_NONE)
+                    && PieceHasColor(board->squares[square], board->state.whoMoves)) {
+                    board->movingPiece.position = square;
+
+                    board->movingPiece.selecting = true;
+                    board->movingPiece.dragging = false;
+                }
+
+                clicked = false;
+                clickTime = 0;
+            }
+        }
+        else {
+            board->movingPiece.dragging = false;
+            board->movingPiece.selecting = false;
+        }
+
+    }
+
+
+
+    if (board->movingPiece.dragging || board->movingPiece.selecting)
+        board->movingPiece.ringRotation += 150 * GetFrameTime();
+    else
+        board->movingPiece.ringRotation = 0;
+
+    if (board->movingPiece.ringRotation > 360)
+        board->movingPiece.ringRotation = 0;
+#undef CLICK_TIME
+}
+
+void showFen(Board* board) {
+
+}
+
+
+void setupPosition(int* menu) {
+
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+
+
+    Board* board = (Board *) malloc(sizeof(Board));
+    
+    BoardInit(screenWidth, screenHeight);
+
+    //setup Position Mode is hard
+    updateSetPosition(board);
+
+    BoardDraw(board, menu);
+
+    //quanta coisa!
+    //buttonSaveFen();
+    //buttonStartPlaying();
+    //buttonSettings();
+    
+}
+
 
 Board BoardInit(int screenWidth, int screenHeight) {
     Board board;
     memset(&board, 0, sizeof(Board));
 
-    board.squareBlackColor = PINK;
+    board.squareBlackColor = DARKGRAY;
     board.squareWhiteColor = WHITE;
 
     board.pieceSpriteSheet = LoadTexture("assets/chess_pieces.png");
@@ -461,6 +572,7 @@ Board BoardInit(int screenWidth, int screenHeight) {
 
     BoardResize(&board, screenWidth, screenHeight);
     _BoardLoadFEN(&board.chessBoard);
+
 
     return board;
 }
@@ -567,11 +679,11 @@ bool _BoardLoadFEN(ChessBoard* board) {
 
     FILE* fenFile = fopen("board_fen.data", "r");
 
-    /* Se não existir o arquivo usa a FEN padrão */
+    /* Se nÃ£o existir o arquivo usa a FEN padrÃ£o */
     if (fenFile == NULL)
         return BoardLoadFEN(board, BOARD_FEN_DEFAULT);
 
-    /* Usa a FEN padrão caso não seja possível ler a FEN do arquivo */
+    /* Usa a FEN padrÃ£o caso nÃ£o seja possÃ­vel ler a FEN do arquivo */
     if (fgets(fenString, sizeof fenString, fenFile) == NULL) {
         fclose(fenFile);
         return BoardLoadFEN(board, BOARD_FEN_DEFAULT);
@@ -579,15 +691,16 @@ bool _BoardLoadFEN(ChessBoard* board) {
 
     fclose(fenFile);
 
-    /* Se a FEN lida do arquivo for uma FEN válida então tudo funciona */
+    /* Se a FEN lida do arquivo for uma FEN vÃ¡lida entÃ£o tudo funciona */
     if (BoardLoadFEN(board, fenString))
         return true;
 
-    /* Se não então FEN padrão entra em ação de novo */
+    /* Se nÃ£o entÃ£o FEN padrÃ£o entra em aÃ§Ã£o de novo */
     return BoardLoadFEN(board, BOARD_FEN_DEFAULT);
 }
 
 bool BoardSaveFEN(ChessBoard* board) {
+
 
     const char pieces_data[6] = {
         'k', 'q', 'b', 'n', 'r', 'p',
@@ -755,6 +868,8 @@ bool BoardMakeMove(ChessBoard* board, int from, int to, bool updateWhoMoves) {
         /* King side rooks */
         else if (from == 63 || from == 7)
             castlingSide = CASTLING_QUEEN_SIDE;
+        else
+            castlingSide = CASTLING_NONE;
 
         if (PieceHasColor(board->squares[from], PIECE_WHITE))
             board->state.castlingWhite &= castlingSide;
@@ -847,17 +962,23 @@ void BoardUpdate(Board* board) {
     if (board->chessBoard.state.waitPromotion) {
         if(isSinglePlayer)
             updatePromotionMenu(board);
+        else if (isSinglePlayer && board->state.whoMoves == saxaColor) {
+            updatePromotionMenu(board);
+        }
+        else if (isSinglePlayer && board->state.whoMoves == saxaOpositeColor) {
+            //
+        }
     }
     else if (BoardKingInMate(&board->chessBoard, board->chessBoard.state.whoMoves)) {
-        // Essa parte está sendo implementada em drawMateWindow
+        // Essa parte estÃ¡ sendo implementada em drawMateWindow
         gameEnded = true;
     }
     else if (BoardKingInMate(&board->chessBoard, board->chessBoard.state.whoMoves == PIECE_WHITE? PIECE_BLACK : PIECE_WHITE )) {
-        // Essa parte está sendo implementada em drawMateWindow
+        // Essa parte estÃ¡ sendo implementada em drawMateWindow
         gameEnded = true;
     }
     else if (board->backButtonClicked) {
-        // Essa parte está sendo implementada em backButton
+        // Essa parte estÃ¡ sendo implementada em backButton
     }
     else {
         rank = (GetMouseY() - board->drawPosition.y) / board->squareLength;
@@ -1443,7 +1564,7 @@ static void backButton(Board * board, int * menu) {
     const int winTitleTextPosX = windowRectangle.x + windowRectangle.width / 2 - MeasureText(winTitleText, winTitleFontSize) / 2.f;
     const int winTitleTextPosY = windowRectangle.y + winTitleFontSize / 2.f;
 
-    const char* btnText[3] = { "Sim", "Salvar e voltar", "Não" };
+    const char* btnText[3] = { "Sim", "Salvar e voltar", "NÃ£o" };
     int btnTextPosX;
     int btnTextPosY;
 
@@ -1722,12 +1843,18 @@ static void drawMateWindow(Board * board, int * menu) {
     btnRectangle.width = MeasureText(btnText, btnFontSize) * 1.5f;
     btnRectangle.x += windowRectangle.width / 2.f - btnRectangle.width / 2.f;
 
-    if (!BoardKingInMate(board, board->chessBoard.state.whoMoves))
-        return;
-    else if (boardInDraw(board)) {
+
+    if (!boardInDraw(board) && !BoardKingInMate(board,board->chessBoard.state.whoMoves)){
+        return;   
+    }
+
+    if (boardInDraw(board)) {
+        wonText = (char*)malloc(sizeof(char)* 15);
         strcpy(wonText, "STALEMATE KKK");
     }
 
+    
+   
     DrawRectangleRounded(windowRectangle, 0.2f, 0, board->squareBlackColor);
     DrawRectangleRoundedLines(windowRectangle, 0.2f, 0, 3, board->squareWhiteColor);
 

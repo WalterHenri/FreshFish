@@ -23,6 +23,7 @@ struct ThreadMoveData {
 
     bool finished;
 };
+
 struct ThreadMoveData threadMoveData;
 
 bool saxaThinking = false;
@@ -76,6 +77,47 @@ DWORD WINAPI backtrackingMoveThreaded(void* data) {
     moveData->finished = true;
     return NULL;
 }
+
+char* nextMoveOpenings(char* moves,int size) {
+    
+    
+
+
+}
+
+void fenToBoardMove(char* move, Board* board) {
+
+}
+
+char* boardMoveToFen(Board board, int from, int to) {
+   
+    char pieces[] = {'K','Q','B','N','R'};
+    char files[] = { 'a','b','c','d','e','f','g','h' };
+
+
+    char* string = (char*)malloc(sizeof(char)*9);
+    switch (PieceGetType(board.squares[from])) {
+    case PIECE_PAWN:
+        string[0] = files[PieceFile(from)];
+        if (PieceGetType(board.squares[to]) == PIECE_NONE)
+            string[1] = PieceRank(to);
+        else {
+            string[1] = 'x';
+            if(PieceGetType(board.squares[to]) == PIECE_PAWN){
+                string[2] = files[PieceFile(to)];
+                string[3] = PieceRank(to) + '0';
+            }
+            else {
+
+            }
+
+        }
+
+        
+    }
+    
+}
+
 
 
 saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta) {
