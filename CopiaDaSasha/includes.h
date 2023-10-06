@@ -10,6 +10,7 @@
 
 #define IMESUARABLE 1
 #define WORST_THING_POSSIBLE 0
+#define ONE_OF_THE_THINGS_POSSIBLE 0.5;
 #define BEST_THING_POSSIBLE 1
 
 /*global variables*/

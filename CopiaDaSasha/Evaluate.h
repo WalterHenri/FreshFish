@@ -7,6 +7,7 @@
 #define IMESUARABLE 1
 #define WORST_THING_POSSIBLE 0
 #define BEST_THING_POSSIBLE 1
+#define ONE_OF_THE_THINGS_POSSIBLE 0.5;
 
 
 float squareValue = 0.1;
@@ -17,11 +18,11 @@ double sigmoid(double grade) {
 
 /* gives value to a instant position*/
 
-double evaluatePosition(Board board);
-double bishopValue(Board board, int square, int pieceColor);
-double horseValue(Board board, int square, int pieceColor);
+double evaluatePosition(ChessBoard board);
+double bishopValue(ChessBoard board, int square, int pieceColor);
+double horseValue(ChessBoard board, int square, int pieceColor);
 
-double horseValue(Board board, int square, int pieceColor) {
+double horseValue(ChessBoard board, int square, int pieceColor) {
 
 
 
@@ -32,7 +33,7 @@ double horseValue(Board board, int square, int pieceColor) {
 
 
 
-double bishopValue(Board board, int square, int pieceColor) {
+double bishopValue(ChessBoard board, int square, int pieceColor) {
 
     double bishop = 3;
 
@@ -207,7 +208,7 @@ double bishopValue(Board board, int square, int pieceColor) {
     return (pieceColor == PIECE_BLACK) ? bishop : -bishop;
 
 }
-double evaluatePosition(Board board) {
+double evaluatePosition(ChessBoard board) {
 
     double grade = 0;
     int sinal;

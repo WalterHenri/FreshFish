@@ -89,7 +89,7 @@ void fenToBoardMove(char* move, Board* board) {
 
 }
 
-char* boardMoveToFen(Board board, int from, int to) {
+char* boardMoveToFen(ChessBoard board, int from, int to) {
    
     char pieces[] = {'K','Q','B','N','R'};
     char files[] = { 'a','b','c','d','e','f','g','h' };
@@ -128,8 +128,14 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
 
         // Fetchin all moves
         
+
+        // Aqui eu coloco todos os movimentos possiveis na posição em um array
         int size = board.move.count;
         saxa_move* movesOrder = (saxa_move*) malloc(size * sizeof(saxa_move));
+
+        if (size == 0) {
+            printf("N tem pra onde ir\n");
+        }
 
         for (int moveFrom = 0; moveFrom < 64; moveFrom++) {
             if (PieceHasType(board.squares[moveFrom], PIECE_NONE)) continue;
@@ -153,7 +159,7 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
 
 
         // Ordering moves based on grade
-        if (board.state.whoMoves == PIECE_WHITE) {
+       // if (board.state.whoMoves == PIECE_WHITE) {
             for (int i = 0; i < moveCounter; i++) {
                 for (int j = 1; j < moveCounter - i; j++) {
 
@@ -165,8 +171,9 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
                     }
                 }
             }
-        }
-        else {
+       // }
+        /*
+        else{
             for (int i = 0; i < moveCounter; i++) {
                 for (int j = 1; j < moveCounter - i; j++) {
 
@@ -179,16 +186,20 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
                 }
             }
         }
+        */
+       
 
         
+        // Aqui eu to dando uma nota inicial pro melhor movimento
+        // Essa nota inicial tem que ser a piorzinha de todas
+        // Pra garantir que o primeiro movimento seja considerado
+        move.grade = 2;
         if (board.state.whoMoves == saxaColor) {
             move.grade = -1;
         }
-        else {
-            move.grade = 2;
-        }
         
       
+        // Checa todos os movimentos na ordem de melhor para pior
         for (int i = 0; i < moveCounter ; i++) {
             int moveFrom = movesOrder[i].from;
             int moveTo = movesOrder[i].to;
@@ -260,6 +271,9 @@ double moveGrade(ChessBoard board, int from, int to, int depth, float alpha, flo
     else if (BoardKingInMate(&board, saxaColor)) {
         return WORST_THING_POSSIBLE;
     }
+    else if (boardInDraw(&board)) {
+        return ONE_OF_THE_THINGS_POSSIBLE;
+    }
     else if (board.state.waitPromotion) {
         board.state.waitPromotion = 0;
         double bestGrade = 0;
@@ -328,8 +342,7 @@ double evaluatePosition(ChessBoard* board) {
         }
     }
 
-    //counting squares of enemies attacks
-
+    // Counting squares of enemies attacks
     for (int i = 0; i < 64; i++) {
         if (board->move.pseudoLegalMoves[i] == true) {
             if (board->state.whoMoves != saxaColor) {

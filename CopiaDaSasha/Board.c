@@ -471,7 +471,7 @@ void updateSetPosition(Board* board) {
                     * the piece.
                     */
                 if (clicked && GetTime() - clickTime > CLICK_TIME
-                    && PieceHasColor(board->squares[square], board->state.whoMoves)) {
+                    && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
                     board->movingPiece.dragging = true;
                     board->movingPiece.selecting = false;
 
@@ -479,8 +479,8 @@ void updateSetPosition(Board* board) {
                 }
 
                 if (!board->movingPiece.dragging
-                    && !PieceHasType(board->squares[square], PIECE_NONE)
-                    && PieceHasColor(board->squares[square], board->state.whoMoves))
+                    && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
+                    && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves))
                     board->movingPiece.position = square;
             }
             else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
@@ -491,14 +491,14 @@ void updateSetPosition(Board* board) {
                     board->movingPiece.dragging = false;
                     board->movingPiece.selecting = false;
 
-                    board->squares[square] = board->squares[board->movingPiece.position];
+                    board->chessBoard.squares[square] = board->chessBoard.squares[board->movingPiece.position];
 
                 }
 
                 if (clicked && GetTime() - clickTime <= CLICK_TIME
                     && !board->movingPiece.selecting
-                    && !PieceHasType(board->squares[square], PIECE_NONE)
-                    && PieceHasColor(board->squares[square], board->state.whoMoves)) {
+                    && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
+                    && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
                     board->movingPiece.position = square;
 
                     board->movingPiece.selecting = true;
@@ -962,10 +962,10 @@ void BoardUpdate(Board* board) {
     if (board->chessBoard.state.waitPromotion) {
         if(isSinglePlayer)
             updatePromotionMenu(board);
-        else if (isSinglePlayer && board->state.whoMoves == saxaColor) {
+        else if (isSinglePlayer && board->chessBoard.state.whoMoves == saxaColor) {
             updatePromotionMenu(board);
         }
-        else if (isSinglePlayer && board->state.whoMoves == saxaOpositeColor) {
+        else if (isSinglePlayer && board->chessBoard.state.whoMoves == saxaOpositeColor) {
             //
         }
     }
@@ -975,6 +975,9 @@ void BoardUpdate(Board* board) {
     }
     else if (BoardKingInMate(&board->chessBoard, board->chessBoard.state.whoMoves == PIECE_WHITE? PIECE_BLACK : PIECE_WHITE )) {
         // Essa parte está sendo implementada em drawMateWindow
+        gameEnded = true;
+    }
+    else if (boardInDraw(&board->chessBoard)) {
         gameEnded = true;
     }
     else if (board->backButtonClicked) {
@@ -1784,9 +1787,9 @@ static void drawDraggingPiece(Board board, Rectangle drawPosition) {
 }
 
 
-int boardInDraw(Board * board) {
+int boardInDraw(ChessBoard * board) {
 
-    if (board->chessBoard.move.count <= 0) {
+    if (board->move.count <= 0) {
         return 1;
     }
     return 0;
