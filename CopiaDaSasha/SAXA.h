@@ -16,7 +16,7 @@
 
 
 struct ThreadMoveData {
-    Board board;
+    ChessBoard board;
     int depth;
     int color;
     saxa_move move;
@@ -43,7 +43,7 @@ bool saxaThinking = false;
 
 ///this is the call function for a SAXA play
 
-saxa_move backtrackingMove(Board board, int depth, int saxa_color) {
+saxa_move backtrackingMove(ChessBoard board, int depth, int saxa_color) {
     saxaColor = saxa_color;
     saxaOpositeColor = (saxaColor == PIECE_WHITE) ? PIECE_BLACK : PIECE_WHITE;
     saxaDepth = depth;
@@ -67,7 +67,7 @@ DWORD WINAPI backtrackingMoveThreaded(void* data) {
     double cpu_time_used;
 
     start = clock();
-    moveData->move = positionBestMove(moveData->board, moveData->depth, 0, 1);
+    moveData->move = positionBestMove(moveData->board, moveData->depth, -1, 2);
     end = clock();
     printf("Pruning Sorting Move(%d, %d) %f \n", moveData->move.from, moveData->move.to, moveData->move.grade);
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; // Calculate the CPU time used
@@ -120,7 +120,7 @@ char* boardMoveToFen(Board board, int from, int to) {
 
 
 
-saxa_move positionBestMove(Board board, int depth, float alpha, float beta) {
+saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta) {
 
     saxa_move move = { 0,-1,-1 };
 
@@ -128,7 +128,7 @@ saxa_move positionBestMove(Board board, int depth, float alpha, float beta) {
 
         // Fetchin all moves
         
-        int size = 150;
+        int size = board.move.count;
         saxa_move* movesOrder = (saxa_move*) malloc(size * sizeof(saxa_move));
 
         for (int moveFrom = 0; moveFrom < 64; moveFrom++) {
@@ -139,13 +139,6 @@ saxa_move positionBestMove(Board board, int depth, float alpha, float beta) {
                     double grade = 0;
 
                     grade = moveGrade(board, moveFrom, moveTo, 0, alpha, beta);
-                    
-
-                    if (moveCounter >= size) {
-                        printf("Overload Moves: %d Size: %d\n", moveCounter, size);
-                        movesOrder = (saxa_move*)realloc(movesOrder, sizeof(saxa_move) * (size + 30));
-                    }
-
                     movesOrder[moveCounter].from = moveFrom;
                     movesOrder[moveCounter].to = moveTo;
                     movesOrder[moveCounter].grade = grade;
@@ -189,10 +182,10 @@ saxa_move positionBestMove(Board board, int depth, float alpha, float beta) {
 
         
         if (board.state.whoMoves == saxaColor) {
-            move.grade = 0;
+            move.grade = -1;
         }
         else {
-            move.grade = 1;
+            move.grade = 2;
         }
         
       
@@ -248,7 +241,7 @@ saxa_move positionBestMove(Board board, int depth, float alpha, float beta) {
 
 
 /// Returns the evaluation grade of the move in the position
-double moveGrade(Board board, int from, int to, int depth, float alpha, float beta) {
+double moveGrade(ChessBoard board, int from, int to, int depth, float alpha, float beta) {
 
     /*right here is when the kid cry and his mom can`t see,
     makes the move and start the search,
@@ -293,7 +286,7 @@ double moveGrade(Board board, int from, int to, int depth, float alpha, float be
 }
 
 
-double evaluatePosition(Board* board) {
+double evaluatePosition(ChessBoard* board) {
 
     /*this evaluate position is simple but effective,
     is impressive what SAXA can do just counting material,

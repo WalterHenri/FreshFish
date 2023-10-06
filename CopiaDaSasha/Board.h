@@ -49,32 +49,7 @@ typedef struct {
 } Profile;
 
 typedef struct {
-    /* The position that's start draw the board */
-    Vector2 drawPosition;
-
-    bool backButtonClicked;
-
-    /* The color of the squares */
-    Color squareBlackColor;
-    Color squareWhiteColor;
-
-    /* Pieces sprite sheet and the size of a sprite */
-    Texture2D pieceSpriteSheet;
-    Vector2 pieceSpriteSize;
-
-    /* The length in pixels of a single square and the square data, i.e., if has
-     * piece or not and which type of piece
-     */
-    float squareLength;
     int squares[64];
-
-    /* Drag information store if is dragging and which piece is dragging */
-    struct {
-        int position;
-        bool dragging;
-        bool selecting;
-        float ringRotation;
-    } movingPiece;
 
     struct {
         int enPassantSquare;
@@ -98,6 +73,36 @@ typedef struct {
         */
         int list[64][64];
     } move;
+} ChessBoard;
+
+typedef struct {
+    /* The position that's start draw the board */
+    Vector2 drawPosition;
+
+    bool backButtonClicked;
+
+    /* The color of the squares */
+    Color squareBlackColor;
+    Color squareWhiteColor;
+
+    /* Pieces sprite sheet and the size of a sprite */
+    Texture2D pieceSpriteSheet;
+    Vector2 pieceSpriteSize;
+
+    /* The length in pixels of a single square and the square data, i.e., if has
+     * piece or not and which type of piece
+     */
+    float squareLength;
+
+    /* Drag information store if is dragging and which piece is dragging */
+    struct {
+        int position;
+        bool dragging;
+        bool selecting;
+        float ringRotation;
+    } movingPiece;
+
+    ChessBoard chessBoard;
 } Board;
 
 void login(int* menuorboard);
@@ -121,20 +126,20 @@ Board BoardInit(int screenWidth, int screenHeight);
 void _BoardInit(Board* board);
 
 // Carrega a FEN de uma string
-bool BoardLoadFEN(Board* board, const char fen[BOARD_FEN_LENGTH]);
+bool BoardLoadFEN(ChessBoard* board, const char fen[BOARD_FEN_LENGTH]);
 
 // Carrega a FEN de um arquivo
-bool _BoardLoadFEN(Board* board);
+bool _BoardLoadFEN(ChessBoard* board);
 
 void BoardUnload(Board* board);
 
 void BoardResize(Board* board, int screenWidth, int screenHeight);
 
-bool BoardMakeMove(Board* board, int from, int to, bool updateWhoMoves);
+bool BoardMakeMove(ChessBoard* board, int from, int to, bool updateWhoMoves);
 
-bool BoardKingInCheck(Board* board, int kingColor);
+bool BoardKingInCheck(ChessBoard* board, int kingColor);
 
-bool BoardKingInMate(Board* board, int kingColor);
+bool BoardKingInMate(ChessBoard* board, int kingColor);
 
 int BoardPerft(Board* board, int depth);
 
