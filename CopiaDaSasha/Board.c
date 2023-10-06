@@ -444,12 +444,130 @@ void gameDificult(int* menuorboard) {
     EndDrawing();
 }
 
+void updateSetPosition(Board* board) {
+#define CLICK_TIME 0.15
+    static double clickTime = 0;
+    static bool clicked = false;
+
+    int rank;
+    int file;
+    int square;
+
+    /* Resize the board if screen size has changed */
+    if (IsWindowResized())
+        BoardResize(board, GetScreenWidth(), GetScreenHeight());
+
+    if (board->backButtonClicked) {
+        // Essa parte está sendo implementada em backButton
+    }
+    else {
+        rank = (GetMouseY() - board->drawPosition.y) / board->squareLength;
+        file = (GetMouseX() - board->drawPosition.x) / board->squareLength;
+
+        square = PieceSquare(rank, file);
+
+
+
+        if (rank >= 0 && rank <= 7 && file >= 0 && file <= 7) {
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+                clickTime = clickTime > 0 ? clickTime : GetTime();
+                clicked = true;
+
+                /* When the button down time is greater than the click time this
+                    * means that isn't a click anymore, therefore, start to drag
+                    * the piece.
+                    */
+                if (clicked && GetTime() - clickTime > CLICK_TIME
+                    && PieceHasColor(board->squares[square], board->state.whoMoves)) {
+                    board->movingPiece.dragging = true;
+                    board->movingPiece.selecting = false;
+
+                    clickTime = 0;
+                }
+
+                if (!board->movingPiece.dragging
+                    && !PieceHasType(board->squares[square], PIECE_NONE)
+                    && PieceHasColor(board->squares[square], board->state.whoMoves))
+                    board->movingPiece.position = square;
+            }
+            else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
+                if ((board->movingPiece.dragging
+                    || (board->movingPiece.selecting
+                        && board->movingPiece.position != square))
+                    && clicked) {
+                    board->movingPiece.dragging = false;
+                    board->movingPiece.selecting = false;
+
+                    board->squares[square] = board->squares[board->movingPiece.position];
+
+                }
+
+                if (clicked && GetTime() - clickTime <= CLICK_TIME
+                    && !board->movingPiece.selecting
+                    && !PieceHasType(board->squares[square], PIECE_NONE)
+                    && PieceHasColor(board->squares[square], board->state.whoMoves)) {
+                    board->movingPiece.position = square;
+
+                    board->movingPiece.selecting = true;
+                    board->movingPiece.dragging = false;
+                }
+
+                clicked = false;
+                clickTime = 0;
+            }
+        }
+        else {
+            board->movingPiece.dragging = false;
+            board->movingPiece.selecting = false;
+        }
+
+    }
+
+
+
+    if (board->movingPiece.dragging || board->movingPiece.selecting)
+        board->movingPiece.ringRotation += 150 * GetFrameTime();
+    else
+        board->movingPiece.ringRotation = 0;
+
+    if (board->movingPiece.ringRotation > 360)
+        board->movingPiece.ringRotation = 0;
+#undef CLICK_TIME
+}
+
+void showFen(Board* board) {
+
+}
+
+
+void setupPosition(int* menu) {
+
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+
+
+    Board* board = (Board *) malloc(sizeof(Board));
+    
+    BoardInit(screenWidth, screenHeight);
+
+    //setup Position Mode is hard
+    updateSetPosition(board);
+
+    BoardDraw(board, menu);
+
+    //quanta coisa!
+    //buttonSaveFen();
+    //buttonStartPlaying();
+    //buttonSettings();
+    
+}
+
 
 Board BoardInit(int screenWidth, int screenHeight) {
     Board board;
     memset(&board, 0, sizeof(Board));
 
-    board.squareBlackColor = PINK;
+    board.squareBlackColor = DARKGRAY;
     board.squareWhiteColor = WHITE;
 
     board.pieceSpriteSheet = LoadTexture("assets/chess_pieces.png");
@@ -461,6 +579,7 @@ Board BoardInit(int screenWidth, int screenHeight) {
 
     BoardResize(&board, screenWidth, screenHeight);
     _BoardLoadFEN(&board);
+    
 
     return board;
 }
@@ -849,6 +968,12 @@ void BoardUpdate(Board* board) {
     if (board->state.waitPromotion) {
         if(!isSinglePlayer)
             updatePromotionMenu(board);
+        else if (isSinglePlayer && board->state.whoMoves == saxaColor) {
+            updatePromotionMenu(board);
+        }
+        else if (isSinglePlayer && board->state.whoMoves == saxaOpositeColor) {
+            //
+        }
     }
     else if (BoardKingInMate(board, board->state.whoMoves)) {
         // Essa parte está sendo implementada em drawMateWindow
@@ -1714,12 +1839,18 @@ static void drawMateWindow(Board * board, int * menu) {
     btnRectangle.width = MeasureText(btnText, btnFontSize) * 1.5f;
     btnRectangle.x += windowRectangle.width / 2.f - btnRectangle.width / 2.f;
 
-    if (!BoardKingInMate(board, board->state.whoMoves))
-        return;
-    else if (boardInDraw(board)) {
+    if (!boardInDraw(board) && !BoardKingInMate(board,board->state.whoMoves)){
+        return;   
+    }
+        
+
+    if (boardInDraw(board)) {
+        wonText = (char*)malloc(sizeof(char)* 15);
         strcpy(wonText, "STALEMATE KKK");
     }
 
+    
+   
     DrawRectangleRounded(windowRectangle, 0.2f, 0, board->squareBlackColor);
     DrawRectangleRoundedLines(windowRectangle, 0.2f, 0, 3, board->squareWhiteColor);
 
