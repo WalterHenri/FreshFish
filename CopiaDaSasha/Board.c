@@ -23,11 +23,9 @@ int saxaDephtBoard;
 int quadros;
 bool isSinglePlayer;
 
-Texture2D xuxinha;
-Texture2D mao;
+Texture2D background;
+Texture2D background2;
 Texture2D logo;
-Texture2D txutxucao;
-Texture2D joseval;
 Texture2D pecas;
 
 
@@ -62,14 +60,11 @@ static void drawPromotionMenu(Board board);
 
 void menuInit() {
     //upload das imagens usadas
-    xuxinha = LoadTexture("./assets/xuxinha.png");
-    mao = LoadTexture("./assets/mao.png");
-    logo = LoadTexture("./assets/logo.png");
-    xuxinha = LoadTexture("./assets/xuxinha.png");
-    txutxucao = LoadTexture("./assets/txutxucao ufs.png");
-    joseval = LoadTexture("./assets/professorjoseval.png");
-    pecas = LoadTexture("./assets/chess_pieces.png");
 
+    logo = LoadTexture("./assets/FreshFishLogo.png");
+    pecas = LoadTexture("./assets/chess_pieces.png");
+    background = LoadTexture("./assets/initialScreen.png");
+    background2 = LoadTexture("./assets/menuScreen.png");
 }
 
 void reverse(char s[]) {
@@ -131,14 +126,13 @@ void menu(int* menuorboard) {
 
     BeginDrawing();
     ClearBackground(BLACK);
+    DrawTexture(background,0,0,WHITE);
 
     DrawRectangleLines(xOfButtons, YOfButtons, buttonWidth, buttonHeight, PINK);
 
     DrawText("Jogar", xOfButtons + inBetweenTextX, YOfButtons + inBetweenTextY, sizeOftext, WHITE);
 
     if (CheckCollisionPointRec(mousePoint, rec1)) {
-
-        DrawTexture(mao, handX, YOfButtons, RAYWHITE);
         if (IsMouseButtonPressed(0)) {
             *menuorboard = 3;
         }
@@ -151,7 +145,6 @@ void menu(int* menuorboard) {
 
     if (CheckCollisionPointRec(mousePoint, rec2)) {
 
-        DrawTexture(mao, handX, YOfButtons + inBetween, RAYWHITE);
         if (IsMouseButtonPressed(0)) {
             *menuorboard = 6;
             selectionB = 0;
@@ -168,7 +161,7 @@ void menu(int* menuorboard) {
     );
 
     if (CheckCollisionPointRec(mousePoint, rec5)) {
-        DrawTexture(mao, handX, YOfButtons + (inBetween * 4), RAYWHITE);
+       
         if (IsMouseButtonPressed(0))
             exit(0);
 
