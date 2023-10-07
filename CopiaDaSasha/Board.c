@@ -27,7 +27,8 @@ Texture2D background;
 Texture2D background2;
 Texture2D logo;
 Texture2D pecas;
-
+Font titleFont;
+Font optionsFont;
 
 /* Internal helpers functions
  */
@@ -65,6 +66,8 @@ void menuInit() {
     pecas = LoadTexture("./assets/chess_pieces.png");
     background = LoadTexture("./assets/initialScreen.png");
     background2 = LoadTexture("./assets/menuScreen.png");
+    titleFont = LoadFontEx("./Fonts/HipotesiS_Tittle.ttf", 256, 0, NULL);
+    optionsFont = LoadFontEx("./Fonts/LemonMilk_Content.otf",256,0,NULL);
 }
 
 void reverse(char s[]) {
@@ -93,6 +96,20 @@ void myitoa(int n, char s[]) {
     reverse(s);
 }
 
+bool checkTextColision(Vector2 origin,Vector2 position,Font font,char* text,int fontSize,int spacing) {
+
+    Vector2 size = MeasureTextEx(font, text, fontSize, spacing);
+    if ((origin.x >= position.x && origin.x <= position.x + size.x)
+        && (origin.y >= position.y- size.y/2 && origin.y <= position.y + size.y/2)) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+
+
 void menu(int* menuorboard) {
     /*
         usamos essas variaveis para pegar o tamanho da tela e baseamos
@@ -102,71 +119,65 @@ void menu(int* menuorboard) {
     float screenHeight = GetScreenHeight();
     float screenwidth = GetScreenWidth();
 
-    float inBetween = screenHeight / 20;
-    float inBetweenTextX = screenwidth / 14;
-    float inBetweenTextY = screenHeight / 100;
-
-    float buttonWidth = screenwidth / 5;
-    float buttonHeight = screenHeight / 30;
-
-    float sizeOftext = screenHeight / 50;
-
-    float xOfButtons = screenwidth / 2 - buttonWidth/2;
-    float YOfButtons = screenHeight / 2 - buttonHeight/2;
-
-    float handX = screenwidth / 4;
-
     Vector2 mousePoint = GetMousePosition();
-
-    Rectangle rec1 = { xOfButtons, YOfButtons, buttonWidth, buttonHeight };
-    Rectangle rec2 = { xOfButtons, YOfButtons + inBetween, buttonWidth, buttonHeight };
-    Rectangle rec5 = { xOfButtons, YOfButtons + (inBetween * 4), buttonWidth, buttonHeight };
-
-    
 
     BeginDrawing();
     ClearBackground(BLACK);
     DrawTexture(background,0,0,WHITE);
 
-    DrawRectangleLines(xOfButtons, YOfButtons, buttonWidth, buttonHeight, PINK);
 
-    DrawText("Jogar", xOfButtons + inBetweenTextX, YOfButtons + inBetweenTextY, sizeOftext, WHITE);
 
-    if (CheckCollisionPointRec(mousePoint, rec1)) {
+    Vector2 positionTitle;
+    int spacing = 2;
+    int fontSizeTitle = screenHeight / 6;
+
+    positionTitle.x = screenwidth / 2 - MeasureTextEx(titleFont,"Fresh Fish",fontSizeTitle,2).x / 2;
+    positionTitle.y = screenHeight / 3;
+
+    DrawTextEx(titleFont,"Fresh Fish", positionTitle, fontSizeTitle,spacing,WHITE);
+    
+    int fontSizeOption = screenHeight / 20;
+    Vector2 positionJogar;
+    positionJogar.x = screenwidth / 2 - MeasureTextEx(optionsFont, "JOGAR", fontSizeOption, 2).x / 2;
+    positionJogar.y = screenHeight / 2;
+
+    DrawTextEx(optionsFont,"JOGAR",positionJogar,fontSizeOption,spacing, WHITE);
+
+    Vector2 positionOpcoes;
+    positionOpcoes.x = screenwidth / 2 - MeasureTextEx(optionsFont, "OPCOES", fontSizeOption, 2).x / 2;
+    positionOpcoes.y = positionJogar.y + (MeasureTextEx(optionsFont, "JOGAR", fontSizeOption, 2).y);
+
+    DrawTextEx(optionsFont, "OPCOES", positionOpcoes, fontSizeOption, spacing, WHITE);
+
+    Vector2 positionSair;
+    positionSair.x = screenwidth / 2 - MeasureTextEx(optionsFont, "SAIR", fontSizeOption, 2).x / 2;
+    positionSair.y = positionOpcoes.y + (MeasureTextEx(optionsFont, "OPCOES", fontSizeOption, 2).y);
+
+    DrawTextEx(optionsFont, "SAIR", positionSair, fontSizeOption, spacing, WHITE);
+
+    
+    if (checkTextColision(mousePoint,positionJogar,optionsFont,"JOGAR",fontSizeOption,spacing)) {
+        DrawTextEx(optionsFont, "JOGAR", positionJogar, fontSizeOption, spacing, YELLOW);
+
         if (IsMouseButtonPressed(0)) {
             *menuorboard = 3;
         }
     }
 
-
-    DrawText("Tabuleiros", xOfButtons + inBetweenTextX,
-        YOfButtons + inBetween + inBetweenTextY,
-        sizeOftext, WHITE);
-
-    if (CheckCollisionPointRec(mousePoint, rec2)) {
-
+    if (checkTextColision(mousePoint, positionOpcoes, optionsFont, "OPCOES", fontSizeOption, spacing)) {
+        DrawTextEx(optionsFont, "OPCOES", positionOpcoes, fontSizeOption, spacing, YELLOW);
         if (IsMouseButtonPressed(0)) {
             *menuorboard = 6;
             selectionB = 0;
         }
     }
 
-    DrawRectangleLines(xOfButtons, YOfButtons + (inBetween * 2), buttonWidth, buttonHeight, PINK);
-
-
-    DrawRectangleLines(xOfButtons, YOfButtons + (inBetween * 4), buttonWidth, buttonHeight, PINK);
-    DrawText("Sair", xOfButtons + inBetweenTextX,
-        YOfButtons + (inBetween * 4) + inBetweenTextY,
-        sizeOftext, WHITE
-    );
-
-    if (CheckCollisionPointRec(mousePoint, rec5)) {
-       
+    if (checkTextColision(mousePoint, positionSair, optionsFont, "SAIR", fontSizeOption, spacing)) {
+        DrawTextEx(optionsFont, "SAIR", positionSair, fontSizeOption, spacing, YELLOW);
         if (IsMouseButtonPressed(0))
             exit(0);
-
     }
-
+    
 
     EndDrawing();
 }
@@ -281,43 +292,48 @@ void GameBoard(int* menuorboard) {
 
 void gamemode(int* menuorboard) {
 
-    BeginDrawing(); // Comando para iniciar a desenhar
-    ClearBackground(BLACK); //
-
+    float screenHeight = GetScreenHeight();
+    float screenwidth = GetScreenWidth();
 
     Vector2 mousePoint = GetMousePosition();
 
-    float screenWidth = GetScreenWidth();
-    float screenHeight = GetScreenHeight();
+    BeginDrawing();
+    ClearBackground(BLACK);
+    DrawTexture(background2, 0, 0, WHITE);
 
 
-    float botao1X = screenWidth / 2 - screenWidth / 8;
 
-    float botao1Y = screenHeight / 4 - screenHeight / 8;
+    Vector2 positionTitle;
+    int spacing = 2;
+    int fontSizeTitle = screenHeight / 6;
 
-    float botao2Y = screenHeight / 4 + screenHeight / 8;
+    positionTitle.x = screenwidth / 2 - MeasureTextEx(titleFont, "Modo De Jogo", fontSizeTitle, 2).x / 2;
+    positionTitle.y = screenHeight / 3;
 
-    float botao3Y = screenHeight / 4 + screenHeight / 8 * 3;
+    DrawTextEx(titleFont, "Modo De Jogo", positionTitle, fontSizeTitle, spacing, WHITE);
 
-    int sizeOftext = screenHeight / 30;
+    int fontSizeOption = screenHeight / 20;
+    Vector2 positionJogar;
+    positionJogar.x = screenwidth / 2 - MeasureTextEx(optionsFont, "DOIS JOGADORES", fontSizeOption, 2).x / 2;
+    positionJogar.y = screenHeight / 2;
 
-    Rectangle botao1 = { botao1X, botao1Y, screenWidth / 4, screenHeight / 8 };
-    Rectangle botao2 = { botao1X, botao2Y, screenWidth / 4, screenHeight / 8 };
-    Rectangle botao3 = { botao1X, botao3Y, screenWidth / 4, screenHeight / 8 };
+    DrawTextEx(optionsFont, "DOIS JOGADORES", positionJogar, fontSizeOption, spacing, WHITE);
 
-    DrawRectangleRounded(botao1, 0.5, sizeOftext, DARKGREEN);
-    DrawText("Dois jogadores", botao1X + 30, botao1Y + 30, sizeOftext, WHITE);
+    Vector2 positionOpcoes;
+    positionOpcoes.x = screenwidth / 2 - MeasureTextEx(optionsFont, "CONTRA O COMPUTADOR", fontSizeOption, 2).x / 2;
+    positionOpcoes.y = positionJogar.y + (MeasureTextEx(optionsFont, "DOIS JOGADORES", fontSizeOption, 2).y);
 
-    DrawRectangleRounded(botao2, 0.5, sizeOftext, DARKGREEN);
-    DrawText("Contra o computador", botao1X + 30, botao2Y + 30, sizeOftext, WHITE);
+    DrawTextEx(optionsFont, "CONTRA O COMPUTADOR", positionOpcoes, fontSizeOption, spacing, WHITE);
 
-    DrawRectangleRounded(botao3, 0.5, sizeOftext, DARKGREEN);
-    DrawText("Voltar", botao1X + 30, botao3Y + 30, sizeOftext, WHITE);
+    Vector2 positionSair;
+    positionSair.x = screenwidth / 2 - MeasureTextEx(optionsFont, "RETROCEDER", fontSizeOption, 2).x / 2;
+    positionSair.y = positionOpcoes.y + (MeasureTextEx(optionsFont, "CONTRA O COMPUTADOR", fontSizeOption, 2).y);
 
-    if (CheckCollisionPointRec(mousePoint, botao1)) {
+    DrawTextEx(optionsFont, "RETROCEDER", positionSair, fontSizeOption, spacing, WHITE);
 
-        DrawRectangleRounded(botao1, 0.5, sizeOftext, RED);
-        DrawText("Dois jogadores", botao1X + 30, botao1Y + 30, sizeOftext, WHITE);
+
+    if (checkTextColision(mousePoint, positionJogar, optionsFont, "DOIS JOGADORES", fontSizeOption, spacing)) {
+        DrawTextEx(optionsFont, "DOIS JOGADORES", positionJogar, fontSizeOption, spacing, YELLOW);
 
         if (IsMouseButtonPressed(0)) {
             isSinglePlayer = 0;
@@ -325,28 +341,23 @@ void gamemode(int* menuorboard) {
         }
     }
 
-    if (CheckCollisionPointRec(mousePoint, botao2)) {
-
-        DrawRectangleRounded(botao2, 0.5, sizeOftext, GREEN);
-        DrawText("Contra o computador", botao1X + 30, botao2Y + 30, sizeOftext, WHITE);
+    if (checkTextColision(mousePoint, positionOpcoes, optionsFont, "CONTRA O COMPUTADOR", fontSizeOption, spacing)) {
+        DrawTextEx(optionsFont, "CONTRA O COMPUTADOR", positionOpcoes, fontSizeOption, spacing, YELLOW);
         if (IsMouseButtonPressed(0)) {
-
             *menuorboard = 4;
         }
     }
 
-    if (CheckCollisionPointRec(mousePoint, botao3)) {
-
-        DrawRectangleRounded(botao3, 0.5, sizeOftext, PINK);
-        DrawText("Voltar", botao1X + 30, botao3Y + 30, sizeOftext, WHITE);
-        if (IsMouseButtonPressed(0)) {
+    if (checkTextColision(mousePoint, positionSair, optionsFont, "RETROCEDER", fontSizeOption, spacing)) {
+        DrawTextEx(optionsFont, "RETROCEDER", positionSair, fontSizeOption, spacing, YELLOW);
+        if (IsMouseButtonPressed(0))
             *menuorboard = 0;
-        }
     }
 
 
     EndDrawing();
 
+  
 
 }
 
@@ -360,8 +371,6 @@ void gameDificult(int* menuorboard) {
 
     float screenWidth = GetScreenWidth();
     float screenHeight = GetScreenHeight();
-
-    
 
     float botaoWidth = screenWidth / 4;
     float botaoHeight = screenHeight / 8;
@@ -515,8 +524,6 @@ void updateSetPosition(Board* board) {
         }
 
     }
-
-
 
     if (board->movingPiece.dragging || board->movingPiece.selecting)
         board->movingPiece.ringRotation += 150 * GetFrameTime();

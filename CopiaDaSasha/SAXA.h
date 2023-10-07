@@ -13,8 +13,6 @@
  /* a bot that knows how to play chess.*/
 
 
-
-
 struct ThreadMoveData {
     ChessBoard board;
     int depth;
@@ -258,8 +256,7 @@ double moveGrade(ChessBoard board, int from, int to, int depth, float alpha, flo
     makes the move and start the search,
     if he finds a mate stop the search,
     call a function that call this function while the depth
-    is not 0,
-    returns the value of the last position from the tree*/ 
+    is not 0, returns the value of the last position from the tree*/ 
 
 
     BoardMakeMove(&board, from, to, true);
@@ -277,19 +274,8 @@ double moveGrade(ChessBoard board, int from, int to, int depth, float alpha, flo
     else if (board.state.waitPromotion) {
         board.state.waitPromotion = 0;
         double bestGrade = 0;
-        int index = 2;
-        for (int i = 2; i <= 5; i++) {
-            board.squares[to] = PieceGetColor(board.squares[to]) + i;
-            double g = positionBestMove(board, depth - 1, alpha, beta).grade;
-            if (g > bestGrade) {
-                bestGrade = g;
-                index = i;
-            }
-        }
-        board.squares[to] = index;
-        return bestGrade;
+     
     }
-
 
     if (depth > 0) {
         return positionBestMove(board, depth - 1, alpha, beta).grade;
