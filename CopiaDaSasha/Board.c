@@ -1050,7 +1050,7 @@ void BoardUpdate(Board* board) {
                     int pieceTo = square;
 
                     if (board->chessBoard.state.whoMoves != saxaColor || isSinglePlayer == false) {
-                        if (board->chessBoard.move.list[pieceFrom][pieceTo] == true) {
+                        if (board->chessBoard.move.list[pieceFrom][pieceTo] != MOVE_NONE) {
                             if (board->chessBoard.move.list[pieceFrom][pieceTo] == MOVE_PAWN_PROMOTE) {
                                 board->promotion.active = true;
                                 board->promotion.from = pieceFrom;
