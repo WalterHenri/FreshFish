@@ -27,6 +27,11 @@ Texture2D background;
 Texture2D background2;
 Texture2D logo;
 Texture2D pecas;
+Texture2D playHoverText;
+Texture2D optionHoverText;
+Texture2D sairHoverText;
+Texture2D bgLeft;
+
 Font titleFont;
 Font optionsFont;
 
@@ -66,8 +71,11 @@ void menuInit() {
     pecas = LoadTexture("./assets/chess_pieces.png");
     background = LoadTexture("./assets/initialScreen.png");
     background2 = LoadTexture("./assets/menuScreen.png");
-    titleFont = LoadFontEx("./Fonts/HipotesiS_Tittle.ttf", 256, 0, 0);
-    optionsFont = LoadFontEx("./Fonts/LemonMilk_Content.otf",256,0,0);
+    titleFont = LoadFontEx("./Fonts/HipotesiS_Tittle.ttf", 256, 0, NULL);
+    optionsFont = LoadFontEx("./Fonts/LemonMilk_Content.otf",256,0,NULL);
+    playHoverText = LoadTexture("./assets/chess-game.png");
+    optionHoverText = LoadTexture("./assets/gear.png");
+    bgLeft = LoadTexture("./assets/bg.png");
 }
 
 void reverse(char s[]) {
@@ -116,8 +124,8 @@ void menu(int* menuorboard) {
     o tamanho do texto das sprites e as posições nessas variáveis.
     */
 
-    float screenHeight = GetScreenHeight();
-    float screenwidth = GetScreenWidth();
+    const float screenHeight = GetScreenHeight();
+    const float screenwidth = GetScreenWidth();
 
     Vector2 mousePoint = GetMousePosition();
 
@@ -125,18 +133,16 @@ void menu(int* menuorboard) {
     ClearBackground(BLACK);
     DrawTexture(background,0,0,WHITE);
 
-
-
     Vector2 positionTitle;
-    int spacing = 2;
-    int fontSizeTitle = screenHeight / 6;
+    const int spacing = 2;
+    const int fontSizeTitle = screenHeight / 6;
 
     positionTitle.x = screenwidth / 2 - MeasureTextEx(titleFont,"Fresh Fish",fontSizeTitle,2).x / 2;
     positionTitle.y = screenHeight / 3;
 
     DrawTextEx(titleFont,"Fresh Fish", positionTitle, fontSizeTitle,spacing,WHITE);
     
-    int fontSizeOption = screenHeight / 20;
+    const int fontSizeOption = screenHeight / 20;
     Vector2 positionJogar;
     positionJogar.x = screenwidth / 2 - MeasureTextEx(optionsFont, "JOGAR", fontSizeOption, 2).x / 2;
     positionJogar.y = screenHeight / 2;
@@ -156,8 +162,14 @@ void menu(int* menuorboard) {
     DrawTextEx(optionsFont, "SAIR", positionSair, fontSizeOption, spacing, WHITE);
 
     
+    
     if (checkTextColision(mousePoint,positionJogar,optionsFont,"JOGAR",fontSizeOption,spacing)) {
         DrawTextEx(optionsFont, "JOGAR", positionJogar, fontSizeOption, spacing, YELLOW);
+    
+        Vector2 newPosition = positionJogar;
+        const double scale = 0.15;
+        newPosition.x -= scale * playHoverText.width + spacing;
+        DrawTextureEx(playHoverText, newPosition,0,scale,WHITE);
 
         if (IsMouseButtonPressed(0)) {
             *menuorboard = 3;
@@ -166,6 +178,12 @@ void menu(int* menuorboard) {
 
     if (checkTextColision(mousePoint, positionOpcoes, optionsFont, "OPCOES", fontSizeOption, spacing)) {
         DrawTextEx(optionsFont, "OPCOES", positionOpcoes, fontSizeOption, spacing, YELLOW);
+
+        Vector2 newPosition = positionOpcoes;
+        const double scale = 0.1;
+        newPosition.x -= scale * playHoverText.width + spacing * 4;
+        DrawTextureEx(optionHoverText, newPosition, 0, scale, WHITE);
+
         if (IsMouseButtonPressed(0)) {
             *menuorboard = 6;
             selectionB = 0;
@@ -301,7 +319,7 @@ void gamemode(int* menuorboard) {
     ClearBackground(BLACK);
     DrawTexture(background2, 0, 0, WHITE);
 
-
+    
 
     Vector2 positionTitle;
     int spacing = 2;
@@ -1092,6 +1110,24 @@ void BoardUpdate(Board* board) {
 #undef CLICK_TIME
 }
 
+void drawBoardBackground(Board * board) {
+    const float screenHeight = GetScreenHeight();
+    const float screenwidth = GetScreenWidth();
+
+    const Color bgInformationColor = {22,40,46,255};
+    const Color bgColor = { 20,20,20,255 };
+
+    const Rectangle bg = { 0,0,screenwidth,screenHeight };
+    const Rectangle bgInformation = { board->drawPosition.x + board->squareLength * 8.5
+        , screenHeight/5, screenwidth/5,screenHeight/1.5 };
+
+    DrawRectangleRec(bg, bgColor);
+    DrawRectangleRec(bgInformation, bgInformationColor);
+    DrawTexture(bgLeft,0,0,WHITE);
+
+
+}
+
 void BoardDraw(Board * board, int * menu) {
     Rectangle squarePosition = {
         board->drawPosition.x,
@@ -1104,7 +1140,7 @@ void BoardDraw(Board * board, int * menu) {
     Color colors[11] = { PINK,SKYBLUE,PURPLE,GREEN,
                         GOLD,RED,MAROON,LIME,BEIGE,BLACK,MAGENTA
     };
-
+    drawBoardBackground(board);
     Color color, opositeColor;
 
     for (int square = 0; square < 64; square++) {
