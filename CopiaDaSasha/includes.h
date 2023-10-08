@@ -25,9 +25,7 @@ int kingValue = IMESUARABLE;
 float squareValue = 0.1;
 
 int saxaDepth; /// warning!!!
-
-int saxaColor = PIECE_WHITE;
-int saxaOpositeColor = PIECE_BLACK;
+int saxaColor = PIECE_BLACK;
 
 typedef struct {
     double grade;
@@ -44,9 +42,11 @@ double evaluatePosition(ChessBoard* board);
 
 /* returns the best move of a position based on depth*/
 saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta);
+saxa_move positionBestMoveTest(ChessBoard board, int depth, float alpha, float beta);
 
 /* test values for position*/
 double moveGrade(ChessBoard board, saxa_move tryMove, int depth, float alpha, float beta);
+double moveGradeTest(ChessBoard board, saxa_move tryMove, int depth, float alpha, float beta);
 
 /* this function returns a value between zero and one*/
 static double sigmoid(double grade) {

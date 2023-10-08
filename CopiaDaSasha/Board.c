@@ -587,6 +587,7 @@ Board BoardInit(int screenWidth, int screenHeight) {
   
 
     board.chessBoard.state.fullmoves = 1;
+    board.viewAsWhite = true;
 
     BoardResize(&board, screenWidth, screenHeight);
     _BoardLoadFEN(&board.chessBoard);
@@ -597,9 +598,12 @@ Board BoardInit(int screenWidth, int screenHeight) {
 
 void _BoardInit(Board* board) {
     board->backButtonClicked = false;
+    board->viewAsWhite = true;
 
     memset(&board->movingPiece, 0, sizeof board->movingPiece);
     memset(&board->chessBoard.move, 0, sizeof board->chessBoard.move);
+
+    
 
     BoardLoadFEN(&board->chessBoard, BOARD_FEN_DEFAULT);
 }
@@ -976,6 +980,10 @@ void BoardUpdate(Board* board) {
     bool gameEnded = false;
 
 
+    if (IsKeyPressed(KEY_SPACE)) {
+        board->viewAsWhite = !board->viewAsWhite;
+    }
+
 
     /* Resize the board if screen size has changed */
     if (IsWindowResized())
@@ -1006,6 +1014,10 @@ void BoardUpdate(Board* board) {
     else {
         rank = (GetMouseY() - board->drawPosition.y) / board->squareLength;
         file = (GetMouseX() - board->drawPosition.x) / board->squareLength;
+        if (!board->viewAsWhite) {
+            rank = 7 - rank;
+        }
+
 
         square = PieceSquare(rank, file);
 
@@ -1038,13 +1050,17 @@ void BoardUpdate(Board* board) {
                     int pieceTo = square;
 
                     if (board->chessBoard.state.whoMoves != saxaColor || isSinglePlayer == false) {
-                        if (board->chessBoard.move.list[pieceFrom][pieceTo] == MOVE_PAWN_PROMOTE) {
-                            board->promotion.active = true;
-                            board->promotion.from = pieceFrom;
-                            board->promotion.to = pieceTo;
-                        }
-                        else {
-                            BoardMakeMove(&board->chessBoard, pieceFrom, pieceTo, 0, true);
+                        if (board->chessBoard.move.list[pieceFrom][pieceTo] == true) {
+                            if (board->chessBoard.move.list[pieceFrom][pieceTo] == MOVE_PAWN_PROMOTE) {
+                                board->promotion.active = true;
+                                board->promotion.from = pieceFrom;
+                                board->promotion.to = pieceTo;
+                            }
+                            else {
+                                BoardMakeMove(&board->chessBoard, pieceFrom, pieceTo, 0, true);
+                                board->positionGradeDepth = 0;
+                                testCalculationAbort = true;
+                            }
                         }
                    }
 
@@ -1087,7 +1103,38 @@ void BoardUpdate(Board* board) {
         
     }
 
+    if (!isSinglePlayer) {
+        if (saxaThinkingTest) {
+            if (threadMoveDataTest.finished) {
+                WaitForSingleObject(saxaMoveTestThreadId, INFINITE);
+                CloseHandle(saxaMoveTestThreadId);
 
+                saxa_move Move = threadMoveDataTest.move;
+
+                if (Move.from != -1 && Move.to != -1) {
+                    board->positionGrade = Move.grade;
+                    board->positionGradeDepth++;
+                }
+
+                saxaThinkingTest = false;
+                testCalculationAbort = false;
+            }
+        }
+        else {
+            if (board->positionGradeDepth <= 2) {
+                threadMoveDataTest.board = board->chessBoard;
+                threadMoveDataTest.finished = false;
+                threadMoveDataTest.depth = board->positionGradeDepth;
+
+                saxaMoveTestThreadId = CreateThread(NULL, 0, backtrackingMoveTestThreaded, &threadMoveDataTest, 0, NULL);
+
+                if (saxaMoveTestThreadId != NULL) {
+                    saxaThinkingTest = true;
+                }
+            }
+        }
+
+    }
 
 
     if (isSinglePlayer && !gameEnded) {
@@ -1097,6 +1144,8 @@ void BoardUpdate(Board* board) {
             if (board->preMoveStored) {
                 BoardMakeMove(&board->chessBoard, board->preMove[0], board->preMove[1], board->preMove[2], true);
                 board->preMoveStored = false;
+                board->positionGradeDepth = 0;
+                testCalculationAbort = true;
             }
         }
         else {
@@ -1110,6 +1159,8 @@ void BoardUpdate(Board* board) {
 
                     if (Move.from != -1 && Move.to != -1) {
                         BoardMakeMove(&board->chessBoard, Move.from, Move.to, Move.extra, true);
+                        board->positionGradeDepth = 0;
+                        testCalculationAbort = true;
                     }
                     else {
                         printf("FreshFish is out of moves\n");
@@ -1161,6 +1212,28 @@ void drawBoardBackground(Board * board) {
 
 }
 
+void drawEvaluationBar(Board* board) {
+    Rectangle barContainerRect = {
+       board->drawPosition.x - 40,
+       board->drawPosition.y,
+
+       20,
+       board->squareLength*8
+    };
+
+   Rectangle barRect = {
+       board->drawPosition.x - 40,
+       board->drawPosition.y,
+
+       20,
+       (board->squareLength*8*board->positionGrade)
+    };
+
+    DrawRectangleRec(barContainerRect, GRAY);
+    DrawRectangleRec(barRect, WHITE);
+
+}
+
 void BoardDraw(Board * board, int * menu) {
     Rectangle squarePosition = {
         board->drawPosition.x,
@@ -1174,15 +1247,20 @@ void BoardDraw(Board * board, int * menu) {
                         GOLD,RED,MAROON,LIME,BEIGE,BLACK,MAGENTA
     };
     drawBoardBackground(board);
+    drawEvaluationBar(board);
     Color color, opositeColor;
 
     for (int square = 0; square < 64; square++) {
-        squarePosition.x = board->drawPosition.x + squarePosition.width
-            * PieceFile(square);
-        squarePosition.y = board->drawPosition.y + squarePosition.height
-            * PieceRank(square);
 
-        if ((PieceRank(square) + PieceFile(square)) % 2) {
+        int drawRank = PieceRank(square);
+        if (!board->viewAsWhite) {
+            drawRank = 7 - drawRank;
+        }
+
+        squarePosition.x = board->drawPosition.x + squarePosition.width * PieceFile(square);
+        squarePosition.y = board->drawPosition.y + squarePosition.height * drawRank;
+
+        if ((drawRank + PieceFile(square)) % 2 == board->viewAsWhite) {
 
 
             if (selectionB == 0) {
@@ -1196,8 +1274,8 @@ void BoardDraw(Board * board, int * menu) {
 
         }
         else {
-            color = WHITE;
-            opositeColor = color;
+            color = board->squareWhiteColor;
+            opositeColor = board->squareBlackColor;
         }
 
         /* Draw the square */
@@ -1606,6 +1684,9 @@ static void updatePromotionMenu(Board* board) {
                 BoardMakeMove(&board->chessBoard, board->promotion.from, board->promotion.to, promotion + 1, true);
             //}
             board->promotion.active = false;
+            board->positionGradeDepth = 0;
+            testCalculationAbort = true;
+            
             /*
             board->chessBoard.squares[PieceSquare(rank, file)] = promotionSelected + PIECE_KING;
 

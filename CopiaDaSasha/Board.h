@@ -114,6 +114,11 @@ typedef struct {
     bool preMoveStored;
     int preMove[3];
 
+    bool viewAsWhite;
+
+    int positionGradeDepth;
+    float positionGrade;
+
     ChessBoard chessBoard;
 } Board;
 
