@@ -33,6 +33,7 @@ typedef struct {
     double grade;
     int to;
     int from;
+    int extra;
 } saxa_move;
 
 /*returns the position best move*/
