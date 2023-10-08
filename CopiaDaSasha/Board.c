@@ -71,8 +71,8 @@ void menuInit() {
     pecas = LoadTexture("./assets/chess_pieces.png");
     background = LoadTexture("./assets/initialScreen.png");
     background2 = LoadTexture("./assets/menuScreen.png");
-    titleFont = LoadFontEx("./Fonts/HipotesiS_Tittle.ttf", 256, 0, NULL);
-    optionsFont = LoadFontEx("./Fonts/LemonMilk_Content.otf",256,0,NULL);
+    titleFont = LoadFontEx("./Fonts/HipotesiS_Tittle.ttf", 256, 0, 0);
+    optionsFont = LoadFontEx("./Fonts/LemonMilk_Content.otf",256,0,0);
     playHoverText = LoadTexture("./assets/chess-game.png");
     optionHoverText = LoadTexture("./assets/gear.png");
     bgLeft = LoadTexture("./assets/bg.png");
