@@ -363,68 +363,54 @@ void gamemode(int* menuorboard) {
 
 void gameDificult(int* menuorboard) {
 
-    BeginDrawing(); // Comando para iniciar a desenhar
-    ClearBackground(BLACK); //
-
+    float screenHeight = GetScreenHeight();
+    float screenwidth = GetScreenWidth();
 
     Vector2 mousePoint = GetMousePosition();
 
-    float screenWidth = GetScreenWidth();
-    float screenHeight = GetScreenHeight();
+    BeginDrawing();
+    ClearBackground(BLACK);
+    DrawTexture(background2, 0, 0, WHITE);
 
-    float botaoWidth = screenWidth / 4;
-    float botaoHeight = screenHeight / 8;
-    float botaoSpacing = (screenHeight / 12) + botaoHeight;
-    float botaoX = screenWidth / 2 - botaoWidth/2;
-    float botaoY = (screenHeight - ((botaoSpacing)*3 + botaoHeight))/2;
 
-    int sizeOftext = screenHeight / 30;
+    int spacing = 2;
+    int fontSizeOption = screenHeight / 20;
+    Vector2 positionJogar;
+    positionJogar.x = screenwidth / 2 - MeasureTextEx(optionsFont, "FACIL", fontSizeOption, 2).x / 2;
+    positionJogar.y = screenHeight / 3;
 
-    Rectangle botao1 = { botaoX, botaoY, botaoWidth, botaoHeight};
-    Rectangle botao2 = { botaoX, botaoY + botaoSpacing, botaoWidth, botaoHeight};
-    Rectangle botao3 = { botaoX, botaoY + botaoSpacing*2, botaoWidth, botaoHeight};
-    Rectangle botao4 = { botaoX, botaoY + botaoSpacing*3, botaoWidth, botaoHeight};
+    DrawTextEx(optionsFont, "FACIL", positionJogar, fontSizeOption, spacing, WHITE);
 
-    DrawRectangleRounded(botao1, 0.5, sizeOftext, DARKGREEN);
-    DrawText("Facil", botaoX + 30, botaoY + 30, sizeOftext, WHITE);
+    Vector2 positionOpcoes;
+    positionOpcoes.x = screenwidth / 2 - MeasureTextEx(optionsFont, "INTERMEDIARIO", fontSizeOption, 2).x / 2;
+    positionOpcoes.y = positionJogar.y + (MeasureTextEx(optionsFont, "FACIL", fontSizeOption, 2).y)*2;
 
-    DrawRectangleRounded(botao2, 0.5, sizeOftext, DARKGREEN);
-    DrawText("Medio", botaoX + 30, botaoY + botaoSpacing + 30, sizeOftext, WHITE);
+    DrawTextEx(optionsFont, "INTERMEDIARIO", positionOpcoes, fontSizeOption, spacing, WHITE);
 
-    DrawRectangleRounded(botao3, 0.5, sizeOftext, DARKGREEN);
-    DrawText("Dificil", botaoX + 30, botaoY + botaoSpacing * 2 + 30, sizeOftext, WHITE);
+    Vector2 positionSair;
+    positionSair.x = screenwidth / 2 - MeasureTextEx(optionsFont, "COMPLEXO", fontSizeOption, 2).x / 2;
+    positionSair.y = positionOpcoes.y + (MeasureTextEx(optionsFont, "INTERMEDIARIO", fontSizeOption, 2).y * 2);
 
-    DrawRectangleRounded(botao4, 0.5, sizeOftext, DARKGREEN);
-    DrawText("Nao consigo vencer isso", botaoX + 30, botaoY + botaoSpacing * 3 + 30, sizeOftext, WHITE);
+    DrawTextEx(optionsFont, "COMPLEXO", positionSair, fontSizeOption, spacing, WHITE);
 
-    if (CheckCollisionPointRec(mousePoint, botao1)) {
+    Vector2 positionSair2;
+    positionSair2.x = screenwidth / 2 - MeasureTextEx(optionsFont, "RETROCEDER", fontSizeOption, 2).x / 2;
+    positionSair2.y = positionSair.y + (MeasureTextEx(optionsFont, "INTERMEDIARIO", fontSizeOption, 2).y * 2);
 
-        DrawRectangleRounded(botao1, 0.5, sizeOftext, GREEN);
-        DrawText("Facil", botaoX + 30, botaoY + 30, sizeOftext, WHITE);
+    DrawTextEx(optionsFont, "RETROCEDER", positionSair2, fontSizeOption, spacing, WHITE);
+
+    if (checkTextColision(mousePoint, positionJogar, optionsFont, "FACIL", fontSizeOption, spacing)) {
+        DrawTextEx(optionsFont, "FACIL", positionJogar, fontSizeOption, spacing, YELLOW);
 
         if (IsMouseButtonPressed(0)) {
-            isSinglePlayer = 1;
-            saxaDephtBoard = 0;
-            *menuorboard = 1;
-        }
-    }
-
-    if (CheckCollisionPointRec(mousePoint, botao2)) {
-
-        DrawRectangleRounded(botao2, 0.5, sizeOftext, YELLOW);
-        DrawText("vai travar um pouco em ...", botaoX + 30, botaoY + botaoSpacing+ 30, sizeOftext, WHITE);
-        if (IsMouseButtonPressed(0)) {
-
             isSinglePlayer = 1;
             saxaDephtBoard = 1;
             *menuorboard = 1;
         }
     }
 
-    if (CheckCollisionPointRec(mousePoint, botao3)) {
-
-        DrawRectangleRounded(botao3, 0.5, sizeOftext, RED);
-        DrawText("vai travar demais !!!", botaoX + 30, botaoY + botaoSpacing * 2 + 30, sizeOftext, WHITE);
+    if (checkTextColision(mousePoint, positionOpcoes, optionsFont, "INTERMEDIARIO", fontSizeOption, spacing)) {
+        DrawTextEx(optionsFont, "INTERMEDIARIO", positionOpcoes, fontSizeOption, spacing, YELLOW);
         if (IsMouseButtonPressed(0)) {
             isSinglePlayer = 1;
             saxaDephtBoard = 2;
@@ -432,14 +418,21 @@ void gameDificult(int* menuorboard) {
         }
     }
 
-    if (CheckCollisionPointRec(mousePoint, botao4)) {
-
-        DrawRectangleRounded(botao4, 0.5, sizeOftext, GRAY);
-        DrawText("Tra.... vo...u...", botaoX + 30, botaoY + botaoSpacing * 3 + 30, sizeOftext, WHITE);
-        if (IsMouseButtonPressed(0)) {
+    if (checkTextColision(mousePoint, positionSair, optionsFont, "COMPLEXO", fontSizeOption, spacing)) {
+        DrawTextEx(optionsFont, "COMPLEXO", positionSair, fontSizeOption, spacing, YELLOW);
+        if (IsMouseButtonPressed(0))
+        {
             isSinglePlayer = 1;
             saxaDephtBoard = 3;
             *menuorboard = 1;
+        }
+    }
+
+    if (checkTextColision(mousePoint, positionSair2, optionsFont, "RETROCEDER", fontSizeOption, spacing)) {
+        DrawTextEx(optionsFont, "RETROCEDER", positionSair2, fontSizeOption, spacing, YELLOW);
+        if (IsMouseButtonPressed(0))
+        {
+            *menuorboard = 3;
         }
     }
 
