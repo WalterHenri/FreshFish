@@ -996,7 +996,7 @@ void BoardUpdate(Board* board) {
         gameEnded = true;
     }
     else if (boardInDraw(&board->chessBoard)) {
-        gameEnded = true;
+       // gameEnded = true;
     }
     else if (board->backButtonClicked) {
         // Essa parte está sendo implementada em backButton
@@ -1011,25 +1011,19 @@ void BoardUpdate(Board* board) {
 
             if (rank >= 0 && rank <= 7 && file >= 0 && file <= 7) {
                 if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-                    clickTime = clickTime > 0 ? clickTime : GetTime();
                     clicked = true;
-
-                    /* When the button down time is greater than the click time this
-                     * means that isn't a click anymore, therefore, start to drag
-                     * the piece.
-                     */
-                    if (clicked && GetTime() - clickTime > CLICK_TIME
-                        && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
-                        board->movingPiece.dragging = true;
-                        board->movingPiece.selecting = false;
-
-                        clickTime = 0;
-                    }
 
                     if (!board->movingPiece.dragging
                         && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
                         && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves))
                         board->movingPiece.position = square;
+
+
+                    if (clicked && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
+                        board->movingPiece.dragging = true;
+                    }
+
+                    
                 }
                 else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
                     if ((board->movingPiece.dragging
@@ -1042,8 +1036,7 @@ void BoardUpdate(Board* board) {
                         BoardMakeMove(&board->chessBoard, board->movingPiece.position, square, true);
                     }
 
-                    if (clicked && GetTime() - clickTime <= CLICK_TIME
-                        && !board->movingPiece.selecting
+                    if (clicked && !board->movingPiece.selecting
                         && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
                         && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
                         board->movingPiece.position = square;
@@ -1052,8 +1045,7 @@ void BoardUpdate(Board* board) {
                         board->movingPiece.dragging = false;
                     }
 
-                    clicked = false;
-                    clickTime = 0;
+                    clicked = false;    
                 }
             }
             else {
@@ -1560,7 +1552,7 @@ static void updatePromotionMenu(Board* board) {
             else
                 board->chessBoard.squares[PieceSquare(rank, file)] += PIECE_BLACK;
 
-            updateTurn(board, false);
+            updateTurn(&board->chessBoard, false);
 
             promotionSelected = 5;
             board->chessBoard.state.waitPromotion = 0;
@@ -1715,7 +1707,7 @@ static void drawPiece(Board board, Rectangle drawPosition, int square, Color col
 
     /* Draw a red square if the king is in check */
     if (PieceHasType(board.chessBoard.squares[square], PIECE_KING)
-        && BoardKingInCheck(&board, PieceGetColor(board.chessBoard.squares[square])))
+        && BoardKingInCheck(&board.chessBoard, PieceGetColor(board.chessBoard.squares[square])))
         DrawRectangleRec(drawPosition, RED);
 
     /* Draw the piece image if isn't dragging any piece or if is dragging
@@ -1883,11 +1875,11 @@ static void drawMateWindow(Board * board, int * menu) {
     btnRectangle.x += windowRectangle.width / 2.f - btnRectangle.width / 2.f;
 
 
-    if (!boardInDraw(board) && !BoardKingInMate(board,board->chessBoard.state.whoMoves)){
+    if (!boardInDraw(&board->chessBoard) && !BoardKingInMate(&board->chessBoard,board->chessBoard.state.whoMoves)){
         return;   
     }
 
-    if (boardInDraw(board)) {
+    if (boardInDraw(&board->chessBoard)) {
         wonText = (char*)malloc(sizeof(char)* 15);
         strcpy(wonText, "STALEMATE KKK");
     }
