@@ -975,17 +975,17 @@ void BoardUpdate(Board* board) {
 
     bool gameEnded = false;
 
+
+
     /* Resize the board if screen size has changed */
     if (IsWindowResized())
         BoardResize(board, GetScreenWidth(), GetScreenHeight());
 
-    if (board->chessBoard.state.waitPromotion || board->promotion.active) {
+    // Promotion Menu
+    if (board->promotion.active) {
         if(!isSinglePlayer)
             updatePromotionMenu(board);
-        else if (isSinglePlayer && board->chessBoard.state.whoMoves == saxaColor) {
-            //updatePromotionMenu(board);
-        }
-        else if (isSinglePlayer && board->chessBoard.state.whoMoves == saxaOpositeColor) {
+        else if (isSinglePlayer && board->chessBoard.state.whoMoves != saxaColor) {
             updatePromotionMenu(board);
         }
     }
@@ -1009,93 +1009,126 @@ void BoardUpdate(Board* board) {
 
         square = PieceSquare(rank, file);
 
-        if (!saxaThinking) {
 
-            if (rank >= 0 && rank <= 7 && file >= 0 && file <= 7) {
-                if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-                    clicked = true;
+        if (rank >= 0 && rank <= 7 && file >= 0 && file <= 7) {
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+                clicked = true;
 
-                    if (!board->movingPiece.dragging
-                        && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
-                        && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves))
-                        board->movingPiece.position = square;
+                if (!board->movingPiece.dragging
+                    && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
+                    && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves))
+                    board->movingPiece.position = square;
 
 
-                    if (clicked && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
-                        board->movingPiece.dragging = true;
-                    }
+                if (clicked && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
+                    board->movingPiece.dragging = true;
+                }
 
                     
-                }
-                else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
-                    if ((board->movingPiece.dragging
-                        || (board->movingPiece.selecting
-                            && board->movingPiece.position != square))
-                        && clicked) {
-                        board->movingPiece.dragging = false;
-                        board->movingPiece.selecting = false;
+            }
+            else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
+                if ((board->movingPiece.dragging
+                    || (board->movingPiece.selecting
+                        && board->movingPiece.position != square))
+                    && clicked) {
+                    board->movingPiece.dragging = false;
+                    board->movingPiece.selecting = false;
 
-                        if (board->chessBoard.move.list[board->movingPiece.position][square] == MOVE_PAWN_PROMOTE) {
+                    int pieceFrom = board->movingPiece.position;
+                    int pieceTo = square;
+
+                    if (board->chessBoard.state.whoMoves != saxaColor || isSinglePlayer == false) {
+                        if (board->chessBoard.move.list[pieceFrom][pieceTo] == MOVE_PAWN_PROMOTE) {
                             board->promotion.active = true;
-                            board->promotion.from = board->movingPiece.position;
-                            board->promotion.to = square;
+                            board->promotion.from = pieceFrom;
+                            board->promotion.to = pieceTo;
                         }
                         else {
-                            BoardMakeMove(&board->chessBoard, board->movingPiece.position, square, 0, true);
+                            BoardMakeMove(&board->chessBoard, pieceFrom, pieceTo, 0, true);
+                        }
+                   }
+
+                    /*
+                    else {
+                        if (board->chessBoard.move.list[pieceFrom][pieceTo] == MOVE_PAWN_PROMOTE) {
+                            board->promotion.active = true;
+                            board->promotion.from = pieceFrom;
+                            board->promotion.to = pieceTo;
+                        }
+                        else {
+
+                            board->preMove[0] = pieceFrom;
+                            board->preMove[1] = pieceTo;
+                            board->preMove[2] = 0;
+
+                            board->preMoveStored = true;
                         }
                     }
+                    */
 
-                    if (clicked && !board->movingPiece.selecting
-                        && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
-                        && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
-                        board->movingPiece.position = square;
+                }
 
-                        board->movingPiece.selecting = true;
-                        board->movingPiece.dragging = false;
+                if (clicked && !board->movingPiece.selecting
+                    && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
+                    && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
+                    board->movingPiece.position = square;
+
+                    board->movingPiece.selecting = true;
+                    board->movingPiece.dragging = false;
+                }
+
+                clicked = false;    
+            }
+        }
+        else {
+            board->movingPiece.dragging = false;
+            board->movingPiece.selecting = false;
+        }
+        
+    }
+
+
+
+
+    if (isSinglePlayer && !gameEnded) {
+
+
+        if (board->chessBoard.state.whoMoves != saxaColor) {
+            if (board->preMoveStored) {
+                BoardMakeMove(&board->chessBoard, board->preMove[0], board->preMove[1], board->preMove[2], true);
+                board->preMoveStored = false;
+            }
+        }
+        else {
+
+            if (saxaThinking) {
+                if (threadMoveData.finished) {
+                    WaitForSingleObject(saxaMoveThreadId, INFINITE);
+                    CloseHandle(saxaMoveThreadId);
+
+                    saxa_move Move = threadMoveData.move;
+
+                    if (Move.from != -1 && Move.to != -1) {
+                        BoardMakeMove(&board->chessBoard, Move.from, Move.to, Move.extra, true);
                     }
-
-                    clicked = false;    
+                    else {
+                        printf("FreshFish is out of moves\n");
+                    }
+                    saxaThinking = false;
                 }
             }
             else {
-                board->movingPiece.dragging = false;
-                board->movingPiece.selecting = false;
-            }
-        }
-    }
+                threadMoveData.board = board->chessBoard;
+                threadMoveData.finished = false;
+                threadMoveData.depth = saxaDephtBoard;
 
-    if (isSinglePlayer && !board->chessBoard.state.waitPromotion) {
-        if (board->chessBoard.state.whoMoves == PIECE_BLACK) {
-            if (!gameEnded) {
-                if (saxaThinking) {
-                    if (threadMoveData.finished) {
-                        WaitForSingleObject(saxaMoveThreadId, INFINITE);
-                        CloseHandle(saxaMoveThreadId);
+                saxaMoveThreadId = CreateThread(NULL, 0, backtrackingMoveThreaded, &threadMoveData, 0, NULL);
 
-                        saxa_move Move = threadMoveData.move;
-
-                        if (Move.from != -1 && Move.to != -1) {
-                            BoardMakeMove(&board->chessBoard, Move.from, Move.to, Move.extra, true);
-                        }
-                        else {
-                            printf("FreshFish is out of moves\n");
-                        }
-                        saxaThinking = false;
-                    }
-                }
-                else {
-                    threadMoveData.board = board->chessBoard;
-                    threadMoveData.color = PIECE_BLACK;
-                    threadMoveData.finished = false;
-                    threadMoveData.depth = saxaDephtBoard;
-
-                    saxaMoveThreadId = CreateThread(NULL, 0, backtrackingMoveThreaded, &threadMoveData, 0, NULL);
-
-                    if (saxaMoveThreadId != NULL) {
-                        saxaThinking = true;
-                    }
+                if (saxaMoveThreadId != NULL) {
+                    saxaThinking = true;
                 }
             }
+            
            
         }
     }
@@ -1560,9 +1593,19 @@ static void updatePromotionMenu(Board* board) {
         else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT) && promotionSelected <= 4) {
 
 
-            BoardMakeMove(&board->chessBoard, board->promotion.from, board->promotion.to, promotion + 1, true);
-            board->promotion.active = false;
+            /*
+            if (isSinglePlayer && board->chessBoard.state.whoMoves == saxaColor) {
+                board->preMove[0] = board->promotion.from;
+                board->preMove[1] = board->promotion.to;
+                board->preMove[2] = promotion + 1;
 
+                board->preMoveStored = true;
+            }
+            else {
+            */
+                BoardMakeMove(&board->chessBoard, board->promotion.from, board->promotion.to, promotion + 1, true);
+            //}
+            board->promotion.active = false;
             /*
             board->chessBoard.squares[PieceSquare(rank, file)] = promotionSelected + PIECE_KING;
 

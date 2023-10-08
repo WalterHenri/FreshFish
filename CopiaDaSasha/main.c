@@ -29,7 +29,7 @@ int main(void) {
     SetMousePosition(screenWidth / 2 + 1, screenHeight / 2 + 1);
 
     board = BoardInit(screenWidth, screenHeight);
-    
+
 
     menuInit();
     SetTargetFPS(60);

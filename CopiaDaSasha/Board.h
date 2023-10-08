@@ -110,6 +110,10 @@ typedef struct {
         int to;
     } promotion;
 
+    // 1 premove having (from, to and extra) values
+    bool preMoveStored;
+    int preMove[3];
+
     ChessBoard chessBoard;
 } Board;
 

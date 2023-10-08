@@ -16,7 +16,6 @@
 struct ThreadMoveData {
     ChessBoard board;
     int depth;
-    int color;
     saxa_move move;
 
     bool finished;
@@ -41,9 +40,9 @@ bool saxaThinking = false;
 
 ///this is the call function for a SAXA play
 
+bool calculationAbort = false;
+
 saxa_move backtrackingMove(ChessBoard board, int depth, int saxa_color) {
-    saxaColor = saxa_color;
-    saxaOpositeColor = (saxaColor == PIECE_WHITE) ? PIECE_BLACK : PIECE_WHITE;
     saxaDepth = depth;
     return positionBestMove(board, depth, 0, 1);
 }
@@ -55,8 +54,6 @@ DWORD WINAPI backtrackingMoveThreaded(void* data) {
 
     struct ThreadMoveData* moveData = (struct ThreadMoveData*)data;
 
-    saxaColor = moveData->color;
-    saxaOpositeColor = (saxaColor == PIECE_WHITE) ? PIECE_BLACK : PIECE_WHITE;
     saxaDepth = moveData->depth;
 
     
@@ -123,6 +120,11 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
     saxa_move move = { 0,-1,-1, 0};
 
     int moveCounter = 0;
+
+    if (calculationAbort) return move;
+
+    
+
 
     // Fetchin all moves
     // Aqui eu coloco todos os movimentos possiveis na posição em um array

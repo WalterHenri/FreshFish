@@ -26,8 +26,8 @@ float squareValue = 0.1;
 
 int saxaDepth; /// warning!!!
 
-int saxaColor;
-int saxaOpositeColor;
+int saxaColor = PIECE_WHITE;
+int saxaOpositeColor = PIECE_BLACK;
 
 typedef struct {
     double grade;
