@@ -55,11 +55,12 @@ typedef struct {
         int enPassantSquare;
         int castlingBlack;
         int castlingWhite;
-        int waitPromotion;
         int halfmoves;
         int fullmoves;
         int whoMoves;
     } state;
+
+    int kingSquare[2];
 
     struct {
         /* Number of generated moves */
@@ -68,7 +69,7 @@ typedef struct {
         int promotionExtraCount;
 
         /* List of squares that are attacked by the enemy */
-        int attackSquares[64];
+        bool attackSquares[64];
 
         /* List of move that can be made for which square (the move for the type of
         * the piece in some square)

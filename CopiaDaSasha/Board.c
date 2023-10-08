@@ -37,6 +37,7 @@ Font optionsFont;
 
 /* Internal helpers functions
  */
+static void findKings(ChessBoard* board);
 static void generateMoves(ChessBoard* board, bool onlyLegalMoves);
 static void updateTurn(ChessBoard* board, bool updateWhoMove);
 static bool isValidMove(ChessBoard board, int from, int to);
@@ -846,16 +847,9 @@ bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWh
         break;
 
     case MOVE_PAWN_PROMOTE:
-        /* The +1 ensures that has a promotion even if it's for a black piece
-         * with the file 0.
-         */
-        board->squares[to] = extra + PieceGetColor(board->squares[from]);
-        /*
-        board->state.waitPromotion = PieceFile(to) + 1;
 
-        if (PieceHasColor(board->squares[from], PIECE_WHITE))
-            board->state.waitPromotion |= 0b1000;
-        */
+        board->squares[to] = extra + PieceGetColor(board->squares[from]);
+
         if (updateWhoMoves)
             board->state.halfmoves = 0;
 
@@ -908,14 +902,19 @@ bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWh
     return true;
 }
 
-bool BoardKingInCheck(ChessBoard* board, int kingColor) {
-    for (int square = 0; square < 64; square++)
+bool BoardKingInCheck(ChessBoard* board, int kingColor) { 
+    /*
+    for (int square = 0; square < 64; square++) {
         if (board->move.attackSquares[square]
             && PieceHasType(board->squares[square], PIECE_KING)
-            && PieceHasColor(board->squares[square], kingColor))
+            && PieceHasColor(board->squares[square], kingColor)) {
             return true;
-
+        }
+    }
     return false;
+    */
+    
+    return (board->move.attackSquares[board->kingSquare[kingColor == PIECE_BLACK]]);
 }
 
 bool BoardKingInMate(ChessBoard* board, int kingColor) {
@@ -1257,8 +1256,10 @@ void BoardDraw(Board * board, int * menu) {
             drawRank = 7 - drawRank;
         }
 
+
         squarePosition.x = board->drawPosition.x + squarePosition.width * PieceFile(square);
         squarePosition.y = board->drawPosition.y + squarePosition.height * drawRank;
+
 
         if ((drawRank + PieceFile(square)) % 2 == board->viewAsWhite) {
 
@@ -1292,7 +1293,7 @@ void BoardDraw(Board * board, int * menu) {
         drawMoves(*board, squarePosition, square);
     }
 
-    if (!board->chessBoard.state.waitPromotion)
+    if (!board->promotion.active)
         drawDraggingPiece(*board, squarePosition);
 
     drawMateWindow(board, menu);
@@ -1301,6 +1302,9 @@ void BoardDraw(Board * board, int * menu) {
 }
 
 static void generateMoves(ChessBoard* board, bool onlyLegalMoves) {
+
+    findKings(board);
+
 
     bool legalMoves = false;
 
@@ -1365,7 +1369,23 @@ static void generateMoves(ChessBoard* board, bool onlyLegalMoves) {
     }
 }
 
-static void generateKingMoves(ChessBoard * board, int square, bool legalMove) {
+static void findKings(ChessBoard* board) {
+    int kingsFound = 0;
+    for (int i = 0; i < 64; i++) {
+        if (PieceGetType(board->squares[i]) == PIECE_KING) {
+            kingsFound++;
+
+            board->kingSquare[(PieceGetColor(board->squares[i]) == PIECE_BLACK)] = i;
+               
+            if (kingsFound >= 2) {
+                return;
+            }
+        }
+    }
+}
+
+
+static void generateKingMoves(ChessBoard* board, int square, bool legalMove) {
 
     static const int directionOffsets[8][2] = {
         {  0, -1 }, {  0,  1 },
@@ -1617,21 +1637,37 @@ static void updateTurn(ChessBoard* board, bool updateWhoMove) {
 }
 
 static bool isValidMove(ChessBoard board, int from, int to) {
-    ChessBoard copiedBoard;
+    board.move.list[from][to] = MOVE_NORMAL;
 
-    memcpy(&copiedBoard, &board, sizeof(board));
-    copiedBoard.move.list[from][to] = MOVE_NORMAL;
+    BoardMakeMove(&board, from, to, 0, false);
+    generateMoves(&board, false);
+    return !BoardKingInCheck(&board, board.state.whoMoves);
 
-    BoardMakeMove(&copiedBoard, from, to, 0, false);
-    generateMoves(&copiedBoard, false);
 
+   // return !BoardKingInCheck(&copiedBoard, copiedBoard.state.whoMoves);
+    /*
     for (int square = 0; square < 64; square++)
-        if (copiedBoard.move.attackSquares[square]
-            && PieceHasType(copiedBoard.squares[square], PIECE_KING)
-            && PieceHasColor(copiedBoard.squares[square], copiedBoard.state.whoMoves))
+        if (board.move.attackSquares[square]
+            && PieceHasType(board.squares[square], PIECE_KING)
+            && PieceHasColor(board.squares[square], board.state.whoMoves))
             return false;
 
     return true;
+    */
+    
+    
+    /*
+    for (int square = 0; square < 64; square++) {
+        if (copiedBoard.move.attackSquares[square]
+            && PieceHasType(copiedBoard.squares[square], PIECE_KING)
+            && PieceHasColor(copiedBoard.squares[square], copiedBoard.state.whoMoves)) {
+            return false;
+        }
+    }
+    return true;
+    */
+    
+    //return !BoardKingInCheck(&copiedBoard, copiedBoard.state.whoMoves);
 }
 
 static void updatePromotionMenu(Board* board) {
@@ -1656,7 +1692,7 @@ static void updatePromotionMenu(Board* board) {
         menuRectangle.height / 1.5f,
     };
 
-    if (!board->chessBoard.state.waitPromotion && !board->promotion.active)
+    if (!board->promotion.active)
         return;
 
     for (int promotion = 1; promotion <= 4; promotion++) {
@@ -1670,37 +1706,13 @@ static void updatePromotionMenu(Board* board) {
         }
         else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT) && promotionSelected <= 4) {
 
+            BoardMakeMove(&board->chessBoard, board->promotion.from, board->promotion.to, promotion + 1, true);
 
-            /*
-            if (isSinglePlayer && board->chessBoard.state.whoMoves == saxaColor) {
-                board->preMove[0] = board->promotion.from;
-                board->preMove[1] = board->promotion.to;
-                board->preMove[2] = promotion + 1;
-
-                board->preMoveStored = true;
-            }
-            else {
-            */
-                BoardMakeMove(&board->chessBoard, board->promotion.from, board->promotion.to, promotion + 1, true);
-            //}
             board->promotion.active = false;
             board->positionGradeDepth = 0;
             testCalculationAbort = true;
-            
-            /*
-            board->chessBoard.squares[PieceSquare(rank, file)] = promotionSelected + PIECE_KING;
 
-            if (board->chessBoard.state.waitPromotion & 0b1000)
-                board->chessBoard.squares[PieceSquare(rank, file)] += PIECE_WHITE;
-            else
-                board->chessBoard.squares[PieceSquare(rank, file)] += PIECE_BLACK;
-
-            updateTurn(&board->chessBoard, false);
-            */
-
-            promotionSelected = 5;
-            board->chessBoard.state.waitPromotion = 0;
-            
+            promotionSelected = 5;            
             break;
         }
     }
@@ -1833,7 +1845,7 @@ static void backButton(Board * board, int * menu) {
 
 static void drawSquare(Board board, Rectangle drawPosition, Color color) {
     if (CheckCollisionPointRec(GetMousePosition(), drawPosition)
-        && !board.chessBoard.state.waitPromotion)
+        && !board.promotion.active)
         DrawRectangleRec(drawPosition, RED);
     else
         DrawRectangleRec(drawPosition, color);
@@ -2073,7 +2085,7 @@ static void drawPromotionMenu(Board board) {
 
     Rectangle spriteRectangle = {
         board.pieceSpriteSize.x,
-        board.pieceSpriteSize.y * ((board.chessBoard.state.waitPromotion & 0b1000) == 0),
+        board.pieceSpriteSize.y * ((board.chessBoard.state.whoMoves == PIECE_BLACK)),
 
         board.pieceSpriteSize.x,
         board.pieceSpriteSize.y,
@@ -2087,7 +2099,7 @@ static void drawPromotionMenu(Board board) {
         menuRectangle.height / 1.5f,
     };
 
-    if (!board.chessBoard.state.waitPromotion && !board.promotion.active)
+    if (!board.promotion.active)
         return;
     
     DrawRectangleRounded(menuRectangle, 0.2f, 0, board.squareBlackColor);

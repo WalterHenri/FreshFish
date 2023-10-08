@@ -144,31 +144,31 @@ char* boardMoveToFen(ChessBoard board, int from, int to) {
 
 
 
-void swap(saxa_move* a, saxa_move* b) {
+void swapMoves(saxa_move* a, saxa_move* b) {
     saxa_move temp = *a;
     *a = *b;
     *b = temp;
 }
 
-void quickSort(saxa_move arr[], int low, int high) {
+void quickSortMoves(saxa_move arr[], int low, int high) {
     if (low < high) {
-        int pi = partition(arr, low, high);
-        quickSort(arr, low, pi - 1);
-        quickSort(arr, pi + 1, high);
+        int pi = partitionMoves(arr, low, high);
+        quickSortMoves(arr, low, pi - 1);
+        quickSortMoves(arr, pi + 1, high);
     }
 }
 
-int partition(saxa_move arr[], int low, int high) {
+int partitionMoves(saxa_move arr[], int low, int high) {
     int pivot = arr[high].grade;
     int i = (low - 1);
 
     for (int j = low; j <= high - 1; j++) {
         if (arr[j].grade >= pivot) {
             i++;
-            swap(&arr[i], &arr[j]);
+            swapMoves(&arr[i], &arr[j]);
         }
     }
-    swap(&arr[i + 1], &arr[high]);
+    swapMoves(&arr[i + 1], &arr[high]);
     return (i + 1);
 }
 
@@ -198,27 +198,26 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
         if (!PieceHasColor(board.squares[moveFrom], board.state.whoMoves))  continue;
         for (int moveTo = 0; moveTo < 64; moveTo++) {
 
-            if (board.move.list[moveFrom][moveTo] == MOVE_PAWN_PROMOTE) {
-                for (int i = 2; i <= 5; i++) {
+            if (board.move.list[moveFrom][moveTo] != MOVE_NONE) {
+
+                int i = 5;
+                if (board.move.list[moveFrom][moveTo] == MOVE_PAWN_PROMOTE) i = 2;
+
+                for (; i <= 5; i++) {
                     saxa_move tryMove = { 0, moveFrom, moveTo, i};
                     tryMove.grade = moveGrade(board, tryMove, 0, alpha, beta);
                     movesOrder[moveCounter] = tryMove;
                     moveCounter++;
                 }
             }
-            else if (board.move.list[moveFrom][moveTo] != MOVE_NONE) {
-                saxa_move tryMove = {0, moveFrom, moveTo, 0};
-                tryMove.grade = moveGrade(board, tryMove,0, alpha, beta);
-                movesOrder[moveCounter] = tryMove;
-                moveCounter++;
-            }
+            
 
         }
     }
         
-    if (moveCounter > 0) {
-        movesOrder = (saxa_move*)realloc(movesOrder, sizeof(saxa_move) * moveCounter);
-    }
+    //if (moveCounter > 0) {
+        //movesOrder = (saxa_move*)realloc(movesOrder, sizeof(saxa_move) * moveCounter);
+    //}
 
 
     // Se whoMoves == PIECE_WHITE vai tentar maximizar a nota
@@ -242,8 +241,8 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
     }
     */
     
-
-    quickSort(movesOrder, 0, moveCounter - 1);
+    // Ordem decrescente
+    quickSortMoves(movesOrder, 0, moveCounter - 1);
 
        
 
