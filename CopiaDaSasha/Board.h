@@ -68,7 +68,7 @@ typedef struct {
         int promotionExtraCount;
 
         /* List of squares that are attacked by the enemy */
-        int pseudoLegalMoves[64];
+        int attackSquares[64];
 
         /* List of move that can be made for which square (the move for the type of
         * the piece in some square)

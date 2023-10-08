@@ -906,7 +906,7 @@ bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWh
 
 bool BoardKingInCheck(ChessBoard* board, int kingColor) {
     for (int square = 0; square < 64; square++)
-        if (board->move.pseudoLegalMoves[square]
+        if (board->move.attackSquares[square]
             && PieceHasType(board->squares[square], PIECE_KING)
             && PieceHasColor(board->squares[square], kingColor))
             return true;
@@ -1300,7 +1300,7 @@ static void generateKingMoves(ChessBoard * board, int square, bool legalMove) {
                 break;
 
             if (!legalMove) {
-                board->move.pseudoLegalMoves[targetSquare] = true;
+                board->move.attackSquares[targetSquare] = true;
             }
             else if (isValidMove(*board, square, targetSquare)) {
                 if (moves == 1) {
@@ -1362,7 +1362,7 @@ static void generateSlightMoves(ChessBoard * board, int square, bool legalMove) 
                 break;
 
             if (!legalMove) {
-                board->move.pseudoLegalMoves[targetSquare] = true;
+                board->move.attackSquares[targetSquare] = true;
             }
             else if (isValidMove(*board, square, targetSquare)) {
                 board->move.list[square][targetSquare] = MOVE_NORMAL;
@@ -1399,7 +1399,7 @@ static void generateKnightMoves(ChessBoard * board, int square, bool legalMove) 
             continue;
 
         if (!legalMove) {
-            board->move.pseudoLegalMoves[targetSquare] = true;
+            board->move.attackSquares[targetSquare] = true;
         }
         else if (isValidMove(*board, square, targetSquare)) {
             board->move.list[square][targetSquare] = MOVE_NORMAL;
@@ -1438,7 +1438,7 @@ static void generatePawnMoves(ChessBoard* board, int square, bool legalMove) {
             break;
 
         if (!legalMove) {
-            board->move.pseudoLegalMoves[targetSquare] = true;
+            board->move.attackSquares[targetSquare] = true;
         }
         else if (isValidMove(*board, square, targetSquare)) {
             if (moves == 1) {
@@ -1469,7 +1469,7 @@ static void generatePawnMoves(ChessBoard* board, int square, bool legalMove) {
             continue;
 
         if (!legalMove) {
-            board->move.pseudoLegalMoves[targetSquare] = true;
+            board->move.attackSquares[targetSquare] = true;
         }
         else if (isValidMove(*board, square, targetSquare)) {
             if (targetSquare == board->state.enPassantSquare) {
@@ -1515,7 +1515,7 @@ static bool isValidMove(ChessBoard board, int from, int to) {
     generateMoves(&copiedBoard, false);
 
     for (int square = 0; square < 64; square++)
-        if (copiedBoard.move.pseudoLegalMoves[square]
+        if (copiedBoard.move.attackSquares[square]
             && PieceHasType(copiedBoard.squares[square], PIECE_KING)
             && PieceHasColor(copiedBoard.squares[square], copiedBoard.state.whoMoves))
             return false;

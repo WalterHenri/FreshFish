@@ -161,19 +161,24 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
     }
 
 
+    // Se whoMoves == PIECE_WHITE vai tentar maximizar a nota
+    // Se whoMoves == PIECE_BLACK vai tentar minimizar a nota
+
+
     // Ordering moves based on grade
     // if (board.state.whoMoves == PIECE_WHITE) {
-        for (int i = 0; i < moveCounter; i++) {
-            for (int j = 1; j < moveCounter - i; j++) {
+    // Ordem decrescente, maiores notas primeiro
+    for (int i = 0; i < moveCounter; i++) {
+        for (int j = 1; j < moveCounter - i; j++) {
 
-                if (movesOrder[j - 1].grade > movesOrder[j].grade) {
-                    saxa_move temp = movesOrder[j - 1];
-                    movesOrder[j - 1] = movesOrder[j];
-                    movesOrder[j] = temp;
+            if (movesOrder[j - 1].grade < movesOrder[j].grade) {
+                saxa_move temp = movesOrder[j - 1];
+                movesOrder[j - 1] = movesOrder[j];
+                movesOrder[j] = temp;
 
-                }
             }
         }
+    }
     // }
     /*
     else{
@@ -196,8 +201,11 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
     // Aqui eu to dando uma nota inicial pro melhor movimento
     // Essa nota inicial tem que ser a piorzinha de todas
     // Pra garantir que o primeiro movimento seja considerado
+
+    // Nota pessima se for PIECE_WHITE
+    // Nota otima   se for PIECE_BLACK
     move.grade = 2;
-    if (board.state.whoMoves == saxaColor) {
+    if (board.state.whoMoves == PIECE_WHITE) {
         move.grade = -1;
     }
         
@@ -205,6 +213,9 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
     // Checa todos os movimentos na ordem de melhor para pior
     saxa_move tryMove;
     for (int i = 0; i < moveCounter ; i++) {
+
+        // Se for PIECE_WHITE ler movimentos em ordem decrescente
+        // Se for PIECE_BLACK ler movimentos em ordem crescente
         if (board.state.whoMoves == PIECE_WHITE) {
             tryMove = movesOrder[i];
         }
@@ -214,7 +225,8 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
 
         tryMove.grade = moveGrade(board, tryMove, depth, alpha, beta);
 
-        if (board.state.whoMoves == saxaColor) {
+        // Se for PIECE_WHITE substituir movimento atual por novo melhor movimento
+        if (board.state.whoMoves == PIECE_WHITE) {
             if (tryMove.grade > move.grade) {
                 move = tryMove;
             }
@@ -224,6 +236,7 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
                 break;
             }
         }
+        // Se for PIECE_BLACK substituir movimento atual por novo pior movimento
         else { 
             if (tryMove.grade < move.grade) {
                 move = tryMove;
@@ -256,10 +269,10 @@ double moveGrade(ChessBoard board, saxa_move tryMove, int depth, float alpha, fl
     BoardMakeMove(&board, tryMove.from, tryMove.to, tryMove.extra, true);
 
 
-    if (BoardKingInMate(&board, saxaOpositeColor)) {
+    if (BoardKingInMate(&board, PIECE_BLACK)) {
         return BEST_THING_POSSIBLE;
     }
-    else if (BoardKingInMate(&board, saxaColor)) {
+    else if (BoardKingInMate(&board, PIECE_WHITE)) {
         return WORST_THING_POSSIBLE;
     }
     else if (boardInDraw(&board)) {
@@ -293,24 +306,24 @@ double evaluatePosition(ChessBoard* board) {
 
             int pieceType = PieceGetType(board->squares[rank * 8 + file]);
             int pieceColor = PieceGetColor(board->squares[rank * 8 + file]);
-            sinal = (pieceColor == saxaColor) ? 1 : -1;
+            sinal = (pieceColor == PIECE_WHITE) ? 1 : -1;
 
             switch (pieceType) {
-
+            case PIECE_QUEEN:
+                grade += queenValue * sinal;
+                break;
             case PIECE_BISHOP:
                 grade += bishopValue * sinal;
                 break;
             case PIECE_KNIGHT:
                 grade += horseValue * sinal;
                 break;
+            case PIECE_ROOK:
+                grade += rookValue * sinal;
+                break;
             case PIECE_PAWN:
                 grade += pawnValue * sinal;
                 break;
-            case PIECE_QUEEN:
-                grade += queenValue * sinal;
-                break;
-            case PIECE_ROOK:
-                grade += rookValue * sinal;
             default:
                 break;
 
@@ -321,16 +334,16 @@ double evaluatePosition(ChessBoard* board) {
     // Counting squares of enemies attacks
     double attackSum = 0;
     for (int i = 0; i < 64; i++) {
-        if (board->move.pseudoLegalMoves[i] == true) {
+        if (board->move.attackSquares[i] == true) {
             attackSum += squareValue;
         }
     }
 
-    if (board->state.whoMoves != saxaColor) {
-        grade += attackSum;
+    if (board->state.whoMoves == PIECE_WHITE) {
+        grade -= attackSum;
     }
     else {
-        grade -= attackSum;
+        grade += attackSum;
     }
 
     return sigmoid(grade);
