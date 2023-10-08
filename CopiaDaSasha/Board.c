@@ -66,8 +66,8 @@ void menuInit() {
     pecas = LoadTexture("./assets/chess_pieces.png");
     background = LoadTexture("./assets/initialScreen.png");
     background2 = LoadTexture("./assets/menuScreen.png");
-    titleFont = LoadFontEx("./Fonts/HipotesiS_Tittle.ttf", 256, 0, NULL);
-    optionsFont = LoadFontEx("./Fonts/LemonMilk_Content.otf",256,0,NULL);
+    titleFont = LoadFontEx("./Fonts/HipotesiS_Tittle.ttf", 256, 0, 0);
+    optionsFont = LoadFontEx("./Fonts/LemonMilk_Content.otf",256,0,0);
 }
 
 void reverse(char s[]) {
@@ -1516,7 +1516,7 @@ static void updatePromotionMenu(Board* board) {
             else
                 board->chessBoard.squares[PieceSquare(rank, file)] += PIECE_BLACK;
 
-            updateTurn(board, false);
+            updateTurn(&board->chessBoard, false);
 
             promotionSelected = 5;
             board->chessBoard.state.waitPromotion = 0;
@@ -1671,7 +1671,7 @@ static void drawPiece(Board board, Rectangle drawPosition, int square, Color col
 
     /* Draw a red square if the king is in check */
     if (PieceHasType(board.chessBoard.squares[square], PIECE_KING)
-        && BoardKingInCheck(&board, PieceGetColor(board.chessBoard.squares[square])))
+        && BoardKingInCheck(&board.chessBoard, PieceGetColor(board.chessBoard.squares[square])))
         DrawRectangleRec(drawPosition, RED);
 
     /* Draw the piece image if isn't dragging any piece or if is dragging

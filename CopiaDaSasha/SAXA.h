@@ -73,7 +73,7 @@ DWORD WINAPI backtrackingMoveThreaded(void* data) {
 
   
     moveData->finished = true;
-    return NULL;
+    return 0;
 }
 
 char* nextMoveOpenings(char* moves,int size) {
