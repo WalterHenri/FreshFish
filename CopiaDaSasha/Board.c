@@ -783,7 +783,7 @@ void BoardResize(Board* board, int screenWidth, int screenHeight) {
 }
 
 
-bool BoardMakeMove(ChessBoard* board, int from, int to, bool updateWhoMoves) {
+bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWhoMoves) {
     if (board->move.list[from][to] == MOVE_NONE || from == to)
         return false;
 
@@ -827,11 +827,13 @@ bool BoardMakeMove(ChessBoard* board, int from, int to, bool updateWhoMoves) {
         /* The +1 ensures that has a promotion even if it's for a black piece
          * with the file 0.
          */
+        board->squares[to] = extra + PieceGetColor(board->squares[from]);
+        /*
         board->state.waitPromotion = PieceFile(to) + 1;
 
         if (PieceHasColor(board->squares[from], PIECE_WHITE))
             board->state.waitPromotion |= 0b1000;
-
+        */
         if (updateWhoMoves)
             board->state.halfmoves = 0;
 
@@ -959,14 +961,14 @@ void BoardUpdate(Board* board) {
     if (IsWindowResized())
         BoardResize(board, GetScreenWidth(), GetScreenHeight());
 
-    if (board->chessBoard.state.waitPromotion) {
-        if(isSinglePlayer)
+    if (board->chessBoard.state.waitPromotion || board->promotion.active) {
+        if(!isSinglePlayer)
             updatePromotionMenu(board);
         else if (isSinglePlayer && board->chessBoard.state.whoMoves == saxaColor) {
-            updatePromotionMenu(board);
+            //updatePromotionMenu(board);
         }
         else if (isSinglePlayer && board->chessBoard.state.whoMoves == saxaOpositeColor) {
-            //
+            updatePromotionMenu(board);
         }
     }
     else if (BoardKingInMate(&board->chessBoard, board->chessBoard.state.whoMoves)) {
@@ -1015,7 +1017,14 @@ void BoardUpdate(Board* board) {
                         board->movingPiece.dragging = false;
                         board->movingPiece.selecting = false;
 
-                        BoardMakeMove(&board->chessBoard, board->movingPiece.position, square, true);
+                        if (board->chessBoard.move.list[board->movingPiece.position][square] == MOVE_PAWN_PROMOTE) {
+                            board->promotion.active = true;
+                            board->promotion.from = board->movingPiece.position;
+                            board->promotion.to = square;
+                        }
+                        else {
+                            BoardMakeMove(&board->chessBoard, board->movingPiece.position, square, 0, true);
+                        }
                     }
 
                     if (clicked && !board->movingPiece.selecting
@@ -1048,7 +1057,7 @@ void BoardUpdate(Board* board) {
                         saxa_move Move = threadMoveData.move;
 
                         if (Move.from != -1 && Move.to != -1) {
-                            BoardMakeMove(&board->chessBoard, Move.from, Move.to, true);
+                            BoardMakeMove(&board->chessBoard, Move.from, Move.to, Move.extra, true);
                         }
                         else {
                             printf("FreshFish is out of moves\n");
@@ -1397,10 +1406,13 @@ static void generatePawnMoves(ChessBoard* board, int square, bool legalMove) {
         }
         else if (isValidMove(*board, square, targetSquare)) {
             if (moves == 1) {
-                if (targetSquare > 7 && targetSquare < 56)
+                if (targetSquare > 7 && targetSquare < 56) {
                     board->move.list[square][targetSquare] = MOVE_NORMAL;
-                else
+                }
+                else {
                     board->move.list[square][targetSquare] = MOVE_PAWN_PROMOTE;
+                    board->move.promotionExtraCount += 3;
+                }
             }
             else {
                 board->move.list[square][targetSquare] = MOVE_PAWN_TWO_FORWARD;
@@ -1431,11 +1443,12 @@ static void generatePawnMoves(ChessBoard* board, int square, bool legalMove) {
 
             if (!PieceHasType(board->squares[targetSquare], PIECE_NONE)
                 && !PieceHasColor(board->squares[targetSquare], PieceGetColor(board->squares[square]))) {
-                if (targetSquare > 7 && targetSquare < 56)
+                if (targetSquare > 7 && targetSquare < 56){
                     board->move.list[square][targetSquare] = MOVE_NORMAL;
-                else
+                }else{
                     board->move.list[square][targetSquare] = MOVE_PAWN_PROMOTE;
-
+                    board->move.promotionExtraCount += 3;
+                }
                 board->move.count++;
             }
         }
@@ -1462,7 +1475,7 @@ static bool isValidMove(ChessBoard board, int from, int to) {
     memcpy(&copiedBoard, &board, sizeof(board));
     copiedBoard.move.list[from][to] = MOVE_NORMAL;
 
-    BoardMakeMove(&copiedBoard, from, to, false);
+    BoardMakeMove(&copiedBoard, from, to, 0, false);
     generateMoves(&copiedBoard, false);
 
     for (int square = 0; square < 64; square++)
@@ -1477,8 +1490,8 @@ static bool isValidMove(ChessBoard board, int from, int to) {
 static void updatePromotionMenu(Board* board) {
     static int promotionSelected = 5;
 
-    const int rank = (board->chessBoard.state.waitPromotion & 0b1000) == 0 ? 7 : 0;
-    const int file = (board->chessBoard.state.waitPromotion - 1) & 0b0111;
+    //const int rank = (board->chessBoard.state.waitPromotion & 0b1000) == 0 ? 7 : 0;
+    //const int file = (board->chessBoard.state.waitPromotion - 1) & 0b0111;
 
     const Rectangle menuRectangle = {
         board->drawPosition.x + board->squareLength,
@@ -1496,7 +1509,7 @@ static void updatePromotionMenu(Board* board) {
         menuRectangle.height / 1.5f,
     };
 
-    if (!board->chessBoard.state.waitPromotion)
+    if (!board->chessBoard.state.waitPromotion && !board->promotion.active)
         return;
 
     for (int promotion = 1; promotion <= 4; promotion++) {
@@ -1509,6 +1522,12 @@ static void updatePromotionMenu(Board* board) {
             promotionSelected = promotion;
         }
         else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT) && promotionSelected <= 4) {
+
+
+            BoardMakeMove(&board->chessBoard, board->promotion.from, board->promotion.to, promotion + 1, true);
+            board->promotion.active = false;
+
+            /*
             board->chessBoard.squares[PieceSquare(rank, file)] = promotionSelected + PIECE_KING;
 
             if (board->chessBoard.state.waitPromotion & 0b1000)
@@ -1517,9 +1536,11 @@ static void updatePromotionMenu(Board* board) {
                 board->chessBoard.squares[PieceSquare(rank, file)] += PIECE_BLACK;
 
             updateTurn(&board->chessBoard, false);
+            */
 
             promotionSelected = 5;
             board->chessBoard.state.waitPromotion = 0;
+            
             break;
         }
     }
@@ -1906,7 +1927,7 @@ static void drawPromotionMenu(Board board) {
         menuRectangle.height / 1.5f,
     };
 
-    if (!board.chessBoard.state.waitPromotion)
+    if (!board.chessBoard.state.waitPromotion && !board.promotion.active)
         return;
     
     DrawRectangleRounded(menuRectangle, 0.2f, 0, board.squareBlackColor);

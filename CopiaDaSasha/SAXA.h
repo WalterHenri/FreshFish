@@ -122,123 +122,121 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
 
     saxa_move move = { 0,-1,-1, 0};
 
-        int moveCounter = 0;
+    int moveCounter = 0;
 
-        // Fetchin all moves
-        
+    // Fetchin all moves
+    // Aqui eu coloco todos os movimentos possiveis na posição em um array
+    int size = board.move.count + board.move.promotionExtraCount;
+    saxa_move* movesOrder = (saxa_move*) malloc(size * sizeof(saxa_move));
 
-        // Aqui eu coloco todos os movimentos possiveis na posição em um array
-        int size = board.move.count;
-        saxa_move* movesOrder = (saxa_move*) malloc(size * sizeof(saxa_move));
+    if (size == 0) {
+        printf("N tem pra onde ir\n");
+    }
 
-        if (size == 0) {
-            printf("N tem pra onde ir\n");
-        }
+    for (int moveFrom = 0; moveFrom < 64; moveFrom++) {
+        if (PieceHasType(board.squares[moveFrom], PIECE_NONE)) continue;
+        if (!PieceHasColor(board.squares[moveFrom], board.state.whoMoves))  continue;
+        for (int moveTo = 0; moveTo < 64; moveTo++) {
 
-        for (int moveFrom = 0; moveFrom < 64; moveFrom++) {
-            if (PieceHasType(board.squares[moveFrom], PIECE_NONE)) continue;
-            if (!PieceHasColor(board.squares[moveFrom], board.state.whoMoves))  continue;
-            for (int moveTo = 0; moveTo < 64; moveTo++) {
-                if (board.move.list[moveFrom][moveTo] == true) {
-                    saxa_move tryMove = {0, moveFrom, moveTo, 0};
+            if (board.move.list[moveFrom][moveTo] == MOVE_PAWN_PROMOTE) {
+                for (int i = 2; i <= 5; i++) {
+                    saxa_move tryMove = { 0, moveFrom, moveTo, i};
                     tryMove.grade = moveGrade(board, tryMove, 0, alpha, beta);
                     movesOrder[moveCounter] = tryMove;
                     moveCounter++;
                 }
             }
+            else if (board.move.list[moveFrom][moveTo] == true) {
+                saxa_move tryMove = {0, moveFrom, moveTo, 0};
+                tryMove.grade = moveGrade(board, tryMove, 0, alpha, beta);
+                movesOrder[moveCounter] = tryMove;
+                moveCounter++;
+            }
+
         }
+    }
         
-        if (moveCounter > 0) {
-            movesOrder = (saxa_move*)realloc(movesOrder, sizeof(saxa_move) * moveCounter);
-        }
+    if (moveCounter > 0) {
+        movesOrder = (saxa_move*)realloc(movesOrder, sizeof(saxa_move) * moveCounter);
+    }
 
 
-        // Ordering moves based on grade
-       // if (board.state.whoMoves == PIECE_WHITE) {
-            for (int i = 0; i < moveCounter; i++) {
-                for (int j = 1; j < moveCounter - i; j++) {
+    // Ordering moves based on grade
+    // if (board.state.whoMoves == PIECE_WHITE) {
+        for (int i = 0; i < moveCounter; i++) {
+            for (int j = 1; j < moveCounter - i; j++) {
 
-                    if (movesOrder[j - 1].grade > movesOrder[j].grade) {
-                        saxa_move temp = movesOrder[j - 1];
-                        movesOrder[j - 1] = movesOrder[j];
-                        movesOrder[j] = temp;
+                if (movesOrder[j - 1].grade > movesOrder[j].grade) {
+                    saxa_move temp = movesOrder[j - 1];
+                    movesOrder[j - 1] = movesOrder[j];
+                    movesOrder[j] = temp;
 
-                    }
-                }
-            }
-       // }
-        /*
-        else{
-            for (int i = 0; i < moveCounter; i++) {
-                for (int j = 1; j < moveCounter - i; j++) {
-
-                    if (movesOrder[j - 1].grade < movesOrder[j].grade) {
-                        saxa_move temp = movesOrder[j - 1];
-                        movesOrder[j - 1] = movesOrder[j];
-                        movesOrder[j] = temp;
-
-                    }
                 }
             }
         }
-        */
+    // }
+    /*
+    else{
+        for (int i = 0; i < moveCounter; i++) {
+            for (int j = 1; j < moveCounter - i; j++) {
+
+                if (movesOrder[j - 1].grade < movesOrder[j].grade) {
+                    saxa_move temp = movesOrder[j - 1];
+                    movesOrder[j - 1] = movesOrder[j];
+                    movesOrder[j] = temp;
+
+                }
+            }
+        }
+    }
+    */
        
 
         
-        // Aqui eu to dando uma nota inicial pro melhor movimento
-        // Essa nota inicial tem que ser a piorzinha de todas
-        // Pra garantir que o primeiro movimento seja considerado
-        move.grade = 2;
-        if (board.state.whoMoves == saxaColor) {
-            move.grade = -1;
-        }
+    // Aqui eu to dando uma nota inicial pro melhor movimento
+    // Essa nota inicial tem que ser a piorzinha de todas
+    // Pra garantir que o primeiro movimento seja considerado
+    move.grade = 2;
+    if (board.state.whoMoves == saxaColor) {
+        move.grade = -1;
+    }
         
       
-        // Checa todos os movimentos na ordem de melhor para pior
-        for (int i = 0; i < moveCounter ; i++) {
-
-
-            saxa_move tryMove;
-
-            if (board.state.whoMoves == PIECE_WHITE) {
-                tryMove = movesOrder[i];
-            }
-            else {
-                tryMove = movesOrder[moveCounter - 1 - i];
-            }
-
-            tryMove.grade = moveGrade(board, tryMove, depth, alpha, beta);
-
-            if (board.state.whoMoves == saxaColor) {
-                if (tryMove.grade > move.grade) {
-                    move = tryMove;
-                }
-
-
-                    alpha = max(alpha, tryMove.grade);
-                    if (beta <= alpha) {
-                        break;
-                    }
-                
-
-            }
-            else { 
-                if (tryMove.grade < move.grade) {
-                    move = tryMove;
-                }
-
-
-                    beta = min(beta, tryMove.grade);
-                    if (beta <= alpha) {
-                        break;
-                    }
-                
-            }
-            
-            
+    // Checa todos os movimentos na ordem de melhor para pior
+    saxa_move tryMove;
+    for (int i = 0; i < moveCounter ; i++) {
+        if (board.state.whoMoves == PIECE_WHITE) {
+            tryMove = movesOrder[i];
         }
+        else {
+            tryMove = movesOrder[moveCounter - 1 - i];
+        }
+
+        tryMove.grade = moveGrade(board, tryMove, depth, alpha, beta);
+
+        if (board.state.whoMoves == saxaColor) {
+            if (tryMove.grade > move.grade) {
+                move = tryMove;
+            }
+
+            alpha = max(alpha, tryMove.grade);
+            if (beta <= alpha) {
+                break;
+            }
+        }
+        else { 
+            if (tryMove.grade < move.grade) {
+                move = tryMove;
+            }
+
+            beta = min(beta, tryMove.grade);
+            if (beta <= alpha) {
+                break;
+            }
+        }
+    }
         
-        free(movesOrder);
+    free(movesOrder);
 
 
     return move;
@@ -255,7 +253,7 @@ double moveGrade(ChessBoard board, saxa_move tryMove, int depth, float alpha, fl
     is not 0, returns the value of the last position from the tree*/ 
 
 
-    BoardMakeMove(&board, tryMove.from, tryMove.to, true);
+    BoardMakeMove(&board, tryMove.from, tryMove.to, tryMove.extra, true);
 
 
     if (BoardKingInMate(&board, saxaOpositeColor)) {
@@ -267,11 +265,7 @@ double moveGrade(ChessBoard board, saxa_move tryMove, int depth, float alpha, fl
     else if (boardInDraw(&board)) {
         return ONE_OF_THE_THINGS_POSSIBLE;
     }
-    else if (board.state.waitPromotion) {
-        board.state.waitPromotion = 0;
-        double bestGrade = 0;
-     
-    }
+
 
     if (depth > 0) {
         return positionBestMove(board, depth - 1, alpha, beta).grade;
@@ -325,15 +319,18 @@ double evaluatePosition(ChessBoard* board) {
     }
 
     // Counting squares of enemies attacks
+    double attackSum = 0;
     for (int i = 0; i < 64; i++) {
         if (board->move.pseudoLegalMoves[i] == true) {
-            if (board->state.whoMoves != saxaColor) {
-                grade += squareValue;
-            }
-            else if (board->state.whoMoves == saxaColor) {
-                grade -= squareValue;
-            }
+            attackSum += squareValue;
         }
+    }
+
+    if (board->state.whoMoves != saxaColor) {
+        grade += attackSum;
+    }
+    else {
+        grade -= attackSum;
     }
 
     return sigmoid(grade);

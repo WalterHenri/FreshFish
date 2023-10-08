@@ -65,6 +65,8 @@ typedef struct {
         /* Number of generated moves */
         int count;
 
+        int promotionExtraCount;
+
         /* List of squares that are attacked by the enemy */
         int pseudoLegalMoves[64];
 
@@ -102,6 +104,12 @@ typedef struct {
         float ringRotation;
     } movingPiece;
 
+    struct {
+        bool active;
+        int from;
+        int to;
+    } promotion;
+
     ChessBoard chessBoard;
 } Board;
 
@@ -135,7 +143,7 @@ void BoardUnload(Board* board);
 
 void BoardResize(Board* board, int screenWidth, int screenHeight);
 
-bool BoardMakeMove(ChessBoard* board, int from, int to, bool updateWhoMoves);
+bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWhoMoves);
 
 bool BoardKingInCheck(ChessBoard* board, int kingColor);
 
