@@ -120,7 +120,7 @@ char* boardMoveToFen(ChessBoard board, int from, int to) {
 
 saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta) {
 
-    saxa_move move = { 0,-1,-1 };
+    saxa_move move = { 0,-1,-1, 0};
 
         int moveCounter = 0;
 
@@ -140,12 +140,9 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
             if (!PieceHasColor(board.squares[moveFrom], board.state.whoMoves))  continue;
             for (int moveTo = 0; moveTo < 64; moveTo++) {
                 if (board.move.list[moveFrom][moveTo] == true) {
-                    double grade = 0;
-
-                    grade = moveGrade(board, moveFrom, moveTo, 0, alpha, beta);
-                    movesOrder[moveCounter].from = moveFrom;
-                    movesOrder[moveCounter].to = moveTo;
-                    movesOrder[moveCounter].grade = grade;
+                    saxa_move tryMove = {0, moveFrom, moveTo, 0};
+                    tryMove.grade = moveGrade(board, tryMove, 0, alpha, beta);
+                    movesOrder[moveCounter] = tryMove;
                     moveCounter++;
                 }
             }
@@ -199,25 +196,26 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
       
         // Checa todos os movimentos na ordem de melhor para pior
         for (int i = 0; i < moveCounter ; i++) {
-            int moveFrom = movesOrder[i].from;
-            int moveTo = movesOrder[i].to;
 
-            if (!board.state.whoMoves == PIECE_WHITE) {
-                moveFrom = movesOrder[moveCounter-1-i].from;
-                moveTo = movesOrder[moveCounter - 1 - i].to;
+
+            saxa_move tryMove;
+
+            if (board.state.whoMoves == PIECE_WHITE) {
+                tryMove = movesOrder[i];
+            }
+            else {
+                tryMove = movesOrder[moveCounter - 1 - i];
             }
 
-            double grade = moveGrade(board, moveFrom, moveTo, depth, alpha, beta);
+            tryMove.grade = moveGrade(board, tryMove, depth, alpha, beta);
 
             if (board.state.whoMoves == saxaColor) {
-                if (grade > move.grade) {
-                    move.grade = grade;
-                    move.from = moveFrom;
-                    move.to = moveTo;
+                if (tryMove.grade > move.grade) {
+                    move = tryMove;
                 }
 
 
-                    alpha = max(alpha, grade);
+                    alpha = max(alpha, tryMove.grade);
                     if (beta <= alpha) {
                         break;
                     }
@@ -225,14 +223,12 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
 
             }
             else { 
-                if (grade < move.grade) {
-                    move.grade = grade;
-                    move.from = moveFrom;
-                    move.to = moveTo;
+                if (tryMove.grade < move.grade) {
+                    move = tryMove;
                 }
 
 
-                    beta = min(beta, grade);
+                    beta = min(beta, tryMove.grade);
                     if (beta <= alpha) {
                         break;
                     }
@@ -250,7 +246,7 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
 
 
 /// Returns the evaluation grade of the move in the position
-double moveGrade(ChessBoard board, int from, int to, int depth, float alpha, float beta) {
+double moveGrade(ChessBoard board, saxa_move tryMove, int depth, float alpha, float beta) {
 
     /*right here is when the kid cry and his mom can`t see,
     makes the move and start the search,
@@ -259,7 +255,7 @@ double moveGrade(ChessBoard board, int from, int to, int depth, float alpha, flo
     is not 0, returns the value of the last position from the tree*/ 
 
 
-    BoardMakeMove(&board, from, to, true);
+    BoardMakeMove(&board, tryMove.from, tryMove.to, true);
 
 
     if (BoardKingInMate(&board, saxaOpositeColor)) {

@@ -31,8 +31,8 @@ int saxaOpositeColor;
 
 typedef struct {
     double grade;
-    int to;
     int from;
+    int to;
     int extra;
 } saxa_move;
 
@@ -46,7 +46,7 @@ double evaluatePosition(ChessBoard* board);
 saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta);
 
 /* test values for position*/
-double moveGrade(ChessBoard board, int from, int to, int depth, float alpha, float beta);
+double moveGrade(ChessBoard board, saxa_move tryMove, int depth, float alpha, float beta);
 
 /* this function returns a value between zero and one*/
 static double sigmoid(double grade) {
