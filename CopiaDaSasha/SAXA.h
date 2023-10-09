@@ -13,19 +13,56 @@
  /* a bot that knows how to play chess.*/
 
 
-struct ThreadMoveData {
-    ChessBoard board;
-    int depth;
-    saxa_move move;
+char* nextMoveOpenings(char* moves, int size) {
 
-    bool finished;
-};
 
-struct ThreadMoveData threadMoveData;
-struct ThreadMoveData threadMoveDataTest;
 
-bool saxaThinking = false;
-bool saxaThinkingTest = false;
+
+}
+
+void fenToBoardMove(char* move, Board* board) {
+
+}
+
+char* boardMoveToFen(ChessBoard board, int from, int to) {
+
+    char pieces[] = { 'K','Q','B','N','R' };
+    char files[] = { 'a','b','c','d','e','f','g','h' };
+
+
+    char* string = (char*)malloc(sizeof(char) * 9);
+    switch (PieceGetType(board.squares[from])) {
+    case PIECE_PAWN:
+        string[0] = files[PieceFile(from)];
+        if (PieceGetType(board.squares[to]) == PIECE_NONE)
+            string[1] = PieceRank(to);
+        else {
+            string[1] = 'x';
+            if (PieceGetType(board.squares[to]) == PIECE_PAWN) {
+                string[2] = files[PieceFile(to)];
+                string[3] = PieceRank(to) + '0';
+            }
+            else {
+
+            }
+
+        }
+
+
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
 
 // Biblioteca do windows pra fazer thread
 #if defined(_WIN32)           
@@ -41,6 +78,21 @@ bool saxaThinkingTest = false;
 #endif
 
 ///this is the call function for a SAXA play
+
+
+struct ThreadMoveData {
+    ChessBoard board;
+    int depth;
+    saxa_move move;
+
+    bool finished;
+};
+
+struct ThreadMoveData threadMoveData;
+struct ThreadMoveData threadMoveDataTest;
+
+bool saxaThinking = false;
+bool saxaThinkingTest = false;
 
 bool calculationAbort = false;
 bool testCalculationAbort = false;
@@ -81,66 +133,10 @@ DWORD WINAPI backtrackingMoveTestThreaded(void* data) {
 
     struct ThreadMoveData* moveData = (struct ThreadMoveData*)data;
 
-    //saxaDepth = moveData->depth;
-
-
-
-    //clock_t start, end;
-    //double cpu_time_used;
-
-    //start = clock();
     moveData->move = positionBestMoveTest(moveData->board, moveData->depth, -1, 2);
-    //end = clock();
-    //printf("Pruning Sorting Move(%d, %d) %f \n", moveData->move.from, moveData->move.to, moveData->move.grade);
-    //cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; // Calculate the CPU time used
-    //printf("CPU time used: %f seconds\n", cpu_time_used);
-
-
     moveData->finished = true;
     return 0;
 }
-
-char* nextMoveOpenings(char* moves,int size) {
-    
-    
-
-
-}
-
-void fenToBoardMove(char* move, Board* board) {
-
-}
-
-char* boardMoveToFen(ChessBoard board, int from, int to) {
-   
-    char pieces[] = {'K','Q','B','N','R'};
-    char files[] = { 'a','b','c','d','e','f','g','h' };
-
-
-    char* string = (char*)malloc(sizeof(char)*9);
-    switch (PieceGetType(board.squares[from])) {
-    case PIECE_PAWN:
-        string[0] = files[PieceFile(from)];
-        if (PieceGetType(board.squares[to]) == PIECE_NONE)
-            string[1] = PieceRank(to);
-        else {
-            string[1] = 'x';
-            if(PieceGetType(board.squares[to]) == PIECE_PAWN){
-                string[2] = files[PieceFile(to)];
-                string[3] = PieceRank(to) + '0';
-            }
-            else {
-
-            }
-
-        }
-
-        
-    }
-   
-}
-
-
 
 
 
@@ -189,10 +185,6 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
     int size = board.move.count + board.move.promotionExtraCount;
     saxa_move* movesOrder = (saxa_move*) malloc(size * sizeof(saxa_move));
 
-    if (size == 0) {
-        printf("N tem pra onde ir\n");
-    }
-
     for (int moveFrom = 0; moveFrom < 64; moveFrom++) {
         if (PieceHasType(board.squares[moveFrom], PIECE_NONE)) continue;
         if (!PieceHasColor(board.squares[moveFrom], board.state.whoMoves))  continue;
@@ -215,31 +207,7 @@ saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta)
         }
     }
         
-    //if (moveCounter > 0) {
-        //movesOrder = (saxa_move*)realloc(movesOrder, sizeof(saxa_move) * moveCounter);
-    //}
 
-
-    // Se whoMoves == PIECE_WHITE vai tentar maximizar a nota
-    // Se whoMoves == PIECE_BLACK vai tentar minimizar a nota
-
-
-    // Ordering moves based on grade
-    // Ordem decrescente, maiores notas primeiro
-    
-    /*
-    for (int i = 0; i < moveCounter; i++) {
-        for (int j = 1; j < moveCounter - i; j++) {
-
-            if (movesOrder[j - 1].grade < movesOrder[j].grade) {
-                saxa_move temp = movesOrder[j - 1];
-                movesOrder[j - 1] = movesOrder[j];
-                movesOrder[j] = temp;
-
-            }
-        }
-    }
-    */
     
     // Ordem decrescente
     quickSortMoves(movesOrder, 0, moveCounter - 1);

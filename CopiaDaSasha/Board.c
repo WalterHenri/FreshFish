@@ -603,6 +603,7 @@ void _BoardInit(Board* board) {
 
     memset(&board->movingPiece, 0, sizeof board->movingPiece);
     memset(&board->chessBoard.move, 0, sizeof board->chessBoard.move);
+    memset(&board->chessBoard.state, 0, sizeof board->chessBoard.state);
 
     
 
@@ -685,13 +686,22 @@ bool BoardLoadFEN(ChessBoard* board, const char fen[BOARD_FEN_LENGTH]) {
         i++;
     }
 
-    i++;
-    for (; fen[i] != ' '; i++)
-        board->state.halfmoves = board->state.halfmoves * 10 + (fen[i] - '0');
+
+
+    board->state.halfmoves = 0;
+    board->state.fullmoves = 0;
 
     i++;
-    for (; fen[i] != ' '; i++)
+    for (; fen[i] != ' '; i++) {
+
+        board->state.halfmoves = board->state.halfmoves * 10 + (fen[i] - '0');
+    }
+
+    i++;
+    for (; (fen[i] != ' ' && fen[i] != '\0'); i++) {
+
         board->state.fullmoves = board->state.fullmoves * 10 + (fen[i] - '0');
+    }
 
     updateTurn(board, false);
     return true;
@@ -721,6 +731,78 @@ bool _BoardLoadFEN(ChessBoard* board) {
     /* Se não então FEN padrão entra em ação de novo */
     return BoardLoadFEN(board, BOARD_FEN_DEFAULT);
 }
+
+
+void BoardGetAsFEN(ChessBoard* board, char fenString[100]) {
+
+
+        const char pieces_data[6] = {
+            'k', 'q', 'b', 'n', 'r', 'p',
+        };
+
+        const char castling_data[8][3] = {
+            "", "K", "Q", "KQ",
+            "", "k", "q", "kq",
+        };
+
+        int square;
+        int fenStringFile;
+        char pieceSymbol;
+
+        int strIndex = 0;
+
+
+        for (int rank = 0; rank < 8; rank++) {
+            fenStringFile = 0;
+
+            for (int file = 0; file < 8; file++, fenStringFile++) {
+                square = PieceSquare(rank, file);
+
+                if (board->squares[square] == PIECE_NONE)
+                    continue;
+
+                pieceSymbol = pieces_data[PieceGetType(board->squares[square]) - 1];
+                if (PieceGetColor(board->squares[square]) == PIECE_WHITE)
+                    pieceSymbol = toupper(pieceSymbol);
+
+                if (fenStringFile > 0)
+                    strIndex += snprintf(fenString+strIndex,100-strIndex, "%d", fenStringFile);
+                strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%c", pieceSymbol);
+
+                fenStringFile = -1;
+            }
+
+            if (rank == 7)
+                continue;
+
+            if (fenStringFile > 0)
+                strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%d", fenStringFile);
+            strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%c", '/');
+        }
+
+        strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %c", board->state.whoMoves == PIECE_WHITE ? 'w' : 'b');
+
+        if (board->state.castlingWhite == 0 && board->state.castlingBlack == 0)
+            strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%s", " -");
+        else
+            strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %s%s",
+                castling_data[board->state.castlingWhite],
+                castling_data[board->state.castlingBlack + 4]);
+
+        if (board->state.enPassantSquare == 0)
+            strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%s", " -");
+        else
+            strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %c%d",
+                PieceFile(board->state.enPassantSquare) + 'a',
+                8 - PieceRank(board->state.enPassantSquare));
+
+        strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %d %d", board->state.halfmoves, board->state.fullmoves);
+
+    }
+
+
+
+
 
 bool BoardSaveFEN(ChessBoard* board) {
 
@@ -1205,10 +1287,26 @@ void drawBoardBackground(Board * board) {
         , screenHeight/5, screenwidth/5,screenHeight/1.5 };
 
     DrawRectangleRec(bg, bgColor);
+
+
+
     DrawRectangleRec(bgInformation, bgInformationColor);
     DrawTexture(bgLeft,0,0,WHITE);
 
+    char fenString[100];
+    BoardGetAsFEN(&board->chessBoard, fenString);
 
+    
+
+    DrawText(fenString, bgInformation.x, bgInformation.y, 10, WHITE);
+
+    char movesString[100];
+    sprintf(movesString, "%d", board->chessBoard.state.fullmoves);
+    DrawText(movesString, bgInformation.x, bgInformation.y + 20, 10, WHITE);
+
+    char hmovesString[100];
+    sprintf(hmovesString, "%d", board->chessBoard.state.halfmoves);
+    DrawText(hmovesString, bgInformation.x, bgInformation.y + 40, 10, WHITE);
 }
 
 void drawEvaluationBar(Board* board) {
@@ -1312,12 +1410,14 @@ static void generateMoves(ChessBoard* board, bool onlyLegalMoves) {
     memset(&board->move, 0, sizeof(board->move));
 
     int squareValue;
-    int kingsSquareIndex = 0;
-    int kingsSquare[2];
+    //int kingsSquareIndex = 0;
+    //int kingsSquare[2];
 
-    for (int square = 0; square < (64 + kingsSquareIndex); square++) {
+    //for (int square = 0; square < (64 + kingsSquareIndex); square++) {
+    for (int square = 0; square < 64; square++) {
         /* If it's generating for the board or "after king generation" */
-        squareValue = square < 64 ? square : kingsSquare[square - 64];
+        //squareValue = square < 64 ? square : kingsSquare[square - 64];
+        squareValue = square;
 
         /* If the piece in this square hasn't the color that's move this turn,
          * only generate pseudo-legal moves for it.
@@ -1333,21 +1433,23 @@ static void generateMoves(ChessBoard* board, bool onlyLegalMoves) {
             continue;
 
         switch (PieceGetType(board->squares[squareValue])) {
-        case PIECE_KING:
-            /* The king moves need to be generated after all other pieces move
-             * generation because of the king castling that must now if it's in
-             * check, this information only can be fetch after all move
-             * generation.
-             *
-             * Therefore, we defer the king move generation to end of the
-             * generation, this ensures the check informations was fetched.
-             */
-            if (square < 64)
-                kingsSquare[kingsSquareIndex++] = square;
-            else
-                generateKingMoves(board, squareValue, legalMoves);
+            
+        //case PIECE_KING:
+        //    /* The king moves need to be generated after all other pieces move
+        //     * generation because of the king castling that must now if it's in
+        //     * check, this information only can be fetch after all move
+        //     * generation.
+        //     *
+        //     * Therefore, we defer the king move generation to end of the
+        //     * generation, this ensures the check informations was fetched.
+        //     */
+        //    if (square < 64)
+        //        kingsSquare[kingsSquareIndex++] = square;
+        //    else
+        //        generateKingMoves(board, squareValue, legalMoves);
 
-            break;
+        //    break;
+            
 
         case PIECE_QUEEN:
         case PIECE_BISHOP:
@@ -1366,6 +1468,17 @@ static void generateMoves(ChessBoard* board, bool onlyLegalMoves) {
         default:
             break;
         }
+    }
+
+
+    for (int i = 0; i < 2; i++) {
+        if (!PieceHasColor(board->squares[board->kingSquare[i]], board->state.whoMoves) || !onlyLegalMoves)
+            legalMoves = false;
+
+        else if (onlyLegalMoves)
+            legalMoves = true;
+
+        generateKingMoves(board, board->kingSquare[i], legalMoves);
     }
 }
 
@@ -1549,10 +1662,11 @@ static void generatePawnMoves(ChessBoard* board, int square, bool legalMove) {
     /* If the piece is white the pawn moves up, i.e., subtracting the rank value
      * of the pawn, otherwise add the rank value
      */
+
     const int direction = PieceHasColor(board->squares[square], PIECE_WHITE) ? -1 : 1;
 
     /* If it's the first move of the pawn it can go two square forward */
-    const int forwardMoves = PieceRank(square) == 1 || PieceRank(square) == 6 ? 2 : 1;
+    const int forwardMoves = (PieceRank(square) == 1) || (PieceRank(square) == 6) ? 2 : 1;
 
     int targetRank;
     int targetFile;

@@ -49,6 +49,9 @@ typedef struct {
 } Profile;
 
 typedef struct {
+
+    
+
     int squares[64];
 
     struct {
