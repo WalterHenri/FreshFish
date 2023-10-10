@@ -120,6 +120,13 @@ typedef struct {
 
     bool viewAsWhite;
 
+    bool xRotating;
+    float xAngle;
+
+    float yScale;
+    float xScale;
+    
+
     int positionGradeDepth;
     float positionGrade;
 

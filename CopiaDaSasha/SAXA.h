@@ -13,6 +13,9 @@
  /* a bot that knows how to play chess.*/
 
 
+
+
+
 char* nextMoveOpenings(char* moves, int size) {
 
 
@@ -89,13 +92,13 @@ struct ThreadMoveData {
 };
 
 struct ThreadMoveData threadMoveData;
-struct ThreadMoveData threadMoveDataTest;
+//struct ThreadMoveData threadMoveDataTest;
 
 bool saxaThinking = false;
-bool saxaThinkingTest = false;
+//bool saxaThinkingTest = false;
 
 bool calculationAbort = false;
-bool testCalculationAbort = false;
+//bool testCalculationAbort = false;
 
 saxa_move backtrackingMove(ChessBoard board, int depth, int saxa_color) {
     //saxaDepth = depth;
@@ -103,7 +106,7 @@ saxa_move backtrackingMove(ChessBoard board, int depth, int saxa_color) {
 }
 
 HANDLE saxaMoveThreadId;
-HANDLE saxaMoveTestThreadId;
+//HANDLE saxaMoveTestThreadId;
 
 
 DWORD WINAPI backtrackingMoveThreaded(void* data) {
@@ -129,14 +132,14 @@ DWORD WINAPI backtrackingMoveThreaded(void* data) {
     return 0;
 }
 
-DWORD WINAPI backtrackingMoveTestThreaded(void* data) {
-
-    struct ThreadMoveData* moveData = (struct ThreadMoveData*)data;
-
-    moveData->move = positionBestMoveTest(moveData->board, moveData->depth, -1, 2);
-    moveData->finished = true;
-    return 0;
-}
+//DWORD WINAPI backtrackingMoveTestThreaded(void* data) {
+//
+//    struct ThreadMoveData* moveData = (struct ThreadMoveData*)data;
+//
+//    moveData->move = positionBestMoveTest(moveData->board, moveData->depth, -1, 2);
+//    moveData->finished = true;
+//    return 0;
+//}
 
 
 
@@ -308,201 +311,6 @@ double moveGrade(ChessBoard board, saxa_move tryMove, int depth, float alpha, fl
 
 
 
-
-
-
-saxa_move positionBestMoveTest(ChessBoard board, int depth, float alpha, float beta) {
-
-    saxa_move move = { 0,-1,-1, 0 };
-
-    int moveCounter = 0;
-
-    if (testCalculationAbort) return move;
-
-
-
-
-    // Fetchin all moves
-    // Aqui eu coloco todos os movimentos possiveis na posição em um array
-    int size = board.move.count + board.move.promotionExtraCount;
-    saxa_move* movesOrder = (saxa_move*)malloc(size * sizeof(saxa_move));
-
-    if (size == 0) {
-        printf("N tem pra onde ir\n");
-    }
-
-    for (int moveFrom = 0; moveFrom < 64; moveFrom++) {
-        if (PieceHasType(board.squares[moveFrom], PIECE_NONE)) continue;
-        if (!PieceHasColor(board.squares[moveFrom], board.state.whoMoves))  continue;
-        for (int moveTo = 0; moveTo < 64; moveTo++) {
-
-            if (board.move.list[moveFrom][moveTo] == MOVE_PAWN_PROMOTE) {
-                for (int i = 2; i <= 5; i++) {
-                    saxa_move tryMove = { 0, moveFrom, moveTo, i };
-                    tryMove.grade = moveGradeTest(board, tryMove, 0, alpha, beta);
-                    movesOrder[moveCounter] = tryMove;
-                    moveCounter++;
-                }
-            }
-            else if (board.move.list[moveFrom][moveTo] == true) {
-                saxa_move tryMove = { 0, moveFrom, moveTo, 0 };
-                tryMove.grade = moveGradeTest(board, tryMove, 0, alpha, beta);
-                movesOrder[moveCounter] = tryMove;
-                moveCounter++;
-            }
-
-        }
-    }
-
-    if (moveCounter > 0) {
-        movesOrder = (saxa_move*)realloc(movesOrder, sizeof(saxa_move) * moveCounter);
-    }
-
-
-    // Se whoMoves == PIECE_WHITE vai tentar maximizar a nota
-    // Se whoMoves == PIECE_BLACK vai tentar minimizar a nota
-
-
-    // Ordering moves based on grade
-    // if (board.state.whoMoves == PIECE_WHITE) {
-    // Ordem decrescente, maiores notas primeiro
-    for (int i = 0; i < moveCounter; i++) {
-        for (int j = 1; j < moveCounter - i; j++) {
-
-            if (movesOrder[j - 1].grade < movesOrder[j].grade) {
-                saxa_move temp = movesOrder[j - 1];
-                movesOrder[j - 1] = movesOrder[j];
-                movesOrder[j] = temp;
-
-            }
-        }
-    }
-    // }
-    /*
-    else{
-        for (int i = 0; i < moveCounter; i++) {
-            for (int j = 1; j < moveCounter - i; j++) {
-
-                if (movesOrder[j - 1].grade < movesOrder[j].grade) {
-                    saxa_move temp = movesOrder[j - 1];
-                    movesOrder[j - 1] = movesOrder[j];
-                    movesOrder[j] = temp;
-
-                }
-            }
-        }
-    }
-    */
-
-
-
-    // Aqui eu to dando uma nota inicial pro melhor movimento
-    // Essa nota inicial tem que ser a piorzinha de todas
-    // Pra garantir que o primeiro movimento seja considerado
-
-    // Nota pessima se for PIECE_WHITE
-    // Nota otima   se for PIECE_BLACK
-    move.grade = 2;
-    if (board.state.whoMoves == PIECE_WHITE) {
-        move.grade = -1;
-    }
-
-
-    // Checa todos os movimentos na ordem de melhor para pior
-    saxa_move tryMove;
-    for (int i = 0; i < moveCounter; i++) {
-
-        // Se for PIECE_WHITE ler movimentos em ordem decrescente
-        // Se for PIECE_BLACK ler movimentos em ordem crescente
-        if (board.state.whoMoves == PIECE_WHITE) {
-            tryMove = movesOrder[i];
-        }
-        else {
-            tryMove = movesOrder[moveCounter - 1 - i];
-        }
-
-        tryMove.grade = moveGradeTest(board, tryMove, depth, alpha, beta);
-
-        // Se for PIECE_WHITE substituir movimento atual por novo melhor movimento
-        if (board.state.whoMoves == PIECE_WHITE) {
-            if (tryMove.grade > move.grade) {
-                move = tryMove;
-            }
-
-            alpha = max(alpha, tryMove.grade);
-            if (beta <= alpha) {
-                break;
-            }
-        }
-        // Se for PIECE_BLACK substituir movimento atual por novo pior movimento
-        else {
-            if (tryMove.grade < move.grade) {
-                move = tryMove;
-            }
-
-            beta = min(beta, tryMove.grade);
-            if (beta <= alpha) {
-                break;
-            }
-        }
-    }
-
-    free(movesOrder);
-
-
-    return move;
-}
-
-
-/// Returns the evaluation grade of the move in the position
-double moveGradeTest(ChessBoard board, saxa_move tryMove, int depth, float alpha, float beta) {
-
-    /*right here is when the kid cry and his mom can`t see,
-    makes the move and start the search,
-    if he finds a mate stop the search,
-    call a function that call this function while the depth
-    is not 0, returns the value of the last position from the tree*/
-
-
-    BoardMakeMove(&board, tryMove.from, tryMove.to, tryMove.extra, true);
-
-
-    if (BoardKingInMate(&board, PIECE_BLACK)) {
-        return BEST_THING_POSSIBLE;
-    }
-    else if (BoardKingInMate(&board, PIECE_WHITE)) {
-        return WORST_THING_POSSIBLE;
-    }
-    else if (boardInDraw(&board)) {
-        return ONE_OF_THE_THINGS_POSSIBLE;
-    }
-
-
-    if (depth > 0) {
-        return positionBestMoveTest(board, depth - 1, alpha, beta).grade;
-    }
-    else
-        return evaluatePosition(&board);
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 double evaluatePosition(ChessBoard* board) {
 
     /*this evaluate position is simple but effective,
@@ -560,6 +368,203 @@ double evaluatePosition(ChessBoard* board) {
         grade += attackSum;
     }
 
+    // E se a gente usar INT ao invés de double?
+    // 
     return sigmoid(grade);
 }
+
+
+
+
+//saxa_move positionBestMoveTest(ChessBoard board, int depth, float alpha, float beta) {
+//
+//    saxa_move move = { 0,-1,-1, 0 };
+//
+//    int moveCounter = 0;
+//
+//    if (testCalculationAbort) return move;
+//
+//
+//
+//
+//    // Fetchin all moves
+//    // Aqui eu coloco todos os movimentos possiveis na posição em um array
+//    int size = board.move.count + board.move.promotionExtraCount;
+//    saxa_move* movesOrder = (saxa_move*)malloc(size * sizeof(saxa_move));
+//
+//    if (size == 0) {
+//        printf("N tem pra onde ir\n");
+//    }
+//
+//    for (int moveFrom = 0; moveFrom < 64; moveFrom++) {
+//        if (PieceHasType(board.squares[moveFrom], PIECE_NONE)) continue;
+//        if (!PieceHasColor(board.squares[moveFrom], board.state.whoMoves))  continue;
+//        for (int moveTo = 0; moveTo < 64; moveTo++) {
+//
+//            if (board.move.list[moveFrom][moveTo] == MOVE_PAWN_PROMOTE) {
+//                for (int i = 2; i <= 5; i++) {
+//                    saxa_move tryMove = { 0, moveFrom, moveTo, i };
+//                    tryMove.grade = moveGradeTest(board, tryMove, 0, alpha, beta);
+//                    movesOrder[moveCounter] = tryMove;
+//                    moveCounter++;
+//                }
+//            }
+//            else if (board.move.list[moveFrom][moveTo] == true) {
+//                saxa_move tryMove = { 0, moveFrom, moveTo, 0 };
+//                tryMove.grade = moveGradeTest(board, tryMove, 0, alpha, beta);
+//                movesOrder[moveCounter] = tryMove;
+//                moveCounter++;
+//            }
+//
+//        }
+//    }
+//
+//    if (moveCounter > 0) {
+//        movesOrder = (saxa_move*)realloc(movesOrder, sizeof(saxa_move) * moveCounter);
+//    }
+//
+//
+//    // Se whoMoves == PIECE_WHITE vai tentar maximizar a nota
+//    // Se whoMoves == PIECE_BLACK vai tentar minimizar a nota
+//
+//
+//    // Ordering moves based on grade
+//    // if (board.state.whoMoves == PIECE_WHITE) {
+//    // Ordem decrescente, maiores notas primeiro
+//    for (int i = 0; i < moveCounter; i++) {
+//        for (int j = 1; j < moveCounter - i; j++) {
+//
+//            if (movesOrder[j - 1].grade < movesOrder[j].grade) {
+//                saxa_move temp = movesOrder[j - 1];
+//                movesOrder[j - 1] = movesOrder[j];
+//                movesOrder[j] = temp;
+//
+//            }
+//        }
+//    }
+//    // }
+//    /*
+//    else{
+//        for (int i = 0; i < moveCounter; i++) {
+//            for (int j = 1; j < moveCounter - i; j++) {
+//
+//                if (movesOrder[j - 1].grade < movesOrder[j].grade) {
+//                    saxa_move temp = movesOrder[j - 1];
+//                    movesOrder[j - 1] = movesOrder[j];
+//                    movesOrder[j] = temp;
+//
+//                }
+//            }
+//        }
+//    }
+//    */
+//
+//
+//
+//    // Aqui eu to dando uma nota inicial pro melhor movimento
+//    // Essa nota inicial tem que ser a piorzinha de todas
+//    // Pra garantir que o primeiro movimento seja considerado
+//
+//    // Nota pessima se for PIECE_WHITE
+//    // Nota otima   se for PIECE_BLACK
+//    move.grade = 2;
+//    if (board.state.whoMoves == PIECE_WHITE) {
+//        move.grade = -1;
+//    }
+//
+//
+//    // Checa todos os movimentos na ordem de melhor para pior
+//    saxa_move tryMove;
+//    for (int i = 0; i < moveCounter; i++) {
+//
+//        // Se for PIECE_WHITE ler movimentos em ordem decrescente
+//        // Se for PIECE_BLACK ler movimentos em ordem crescente
+//        if (board.state.whoMoves == PIECE_WHITE) {
+//            tryMove = movesOrder[i];
+//        }
+//        else {
+//            tryMove = movesOrder[moveCounter - 1 - i];
+//        }
+//
+//        tryMove.grade = moveGradeTest(board, tryMove, depth, alpha, beta);
+//
+//        // Se for PIECE_WHITE substituir movimento atual por novo melhor movimento
+//        if (board.state.whoMoves == PIECE_WHITE) {
+//            if (tryMove.grade > move.grade) {
+//                move = tryMove;
+//            }
+//
+//            alpha = max(alpha, tryMove.grade);
+//            if (beta <= alpha) {
+//                break;
+//            }
+//        }
+//        // Se for PIECE_BLACK substituir movimento atual por novo pior movimento
+//        else {
+//            if (tryMove.grade < move.grade) {
+//                move = tryMove;
+//            }
+//
+//            beta = min(beta, tryMove.grade);
+//            if (beta <= alpha) {
+//                break;
+//            }
+//        }
+//    }
+//
+//    free(movesOrder);
+//
+//
+//    return move;
+//}
+//
+//
+///// Returns the evaluation grade of the move in the position
+//double moveGradeTest(ChessBoard board, saxa_move tryMove, int depth, float alpha, float beta) {
+//
+//    /*right here is when the kid cry and his mom can`t see,
+//    makes the move and start the search,
+//    if he finds a mate stop the search,
+//    call a function that call this function while the depth
+//    is not 0, returns the value of the last position from the tree*/
+//
+//
+//    BoardMakeMove(&board, tryMove.from, tryMove.to, tryMove.extra, true);
+//
+//
+//    if (BoardKingInMate(&board, PIECE_BLACK)) {
+//        return BEST_THING_POSSIBLE;
+//    }
+//    else if (BoardKingInMate(&board, PIECE_WHITE)) {
+//        return WORST_THING_POSSIBLE;
+//    }
+//    else if (boardInDraw(&board)) {
+//        return ONE_OF_THE_THINGS_POSSIBLE;
+//    }
+//
+//
+//    if (depth > 0) {
+//        return positionBestMoveTest(board, depth - 1, alpha, beta).grade;
+//    }
+//    else
+//        return evaluatePosition(&board);
+//
+//}
+//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -585,6 +585,10 @@ Board BoardInit(int screenWidth, int screenHeight) {
     board.pieceSpriteSheet = LoadTexture("assets/chess_pieces.png");
     board.pieceSpriteSize.x = board.pieceSpriteSheet.width / 6.f;
     board.pieceSpriteSize.y = board.pieceSpriteSheet.height / 2.f,
+
+    board.yScale = 1;
+    board.xScale = 1;
+
   
 
     board.chessBoard.state.fullmoves = 1;
@@ -736,77 +740,6 @@ bool _BoardLoadFEN(ChessBoard* board) {
 void BoardGetAsFEN(ChessBoard* board, char fenString[100]) {
 
 
-        const char pieces_data[6] = {
-            'k', 'q', 'b', 'n', 'r', 'p',
-        };
-
-        const char castling_data[8][3] = {
-            "", "K", "Q", "KQ",
-            "", "k", "q", "kq",
-        };
-
-        int square;
-        int fenStringFile;
-        char pieceSymbol;
-
-        int strIndex = 0;
-
-
-        for (int rank = 0; rank < 8; rank++) {
-            fenStringFile = 0;
-
-            for (int file = 0; file < 8; file++, fenStringFile++) {
-                square = PieceSquare(rank, file);
-
-                if (board->squares[square] == PIECE_NONE)
-                    continue;
-
-                pieceSymbol = pieces_data[PieceGetType(board->squares[square]) - 1];
-                if (PieceGetColor(board->squares[square]) == PIECE_WHITE)
-                    pieceSymbol = toupper(pieceSymbol);
-
-                if (fenStringFile > 0)
-                    strIndex += snprintf(fenString+strIndex,100-strIndex, "%d", fenStringFile);
-                strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%c", pieceSymbol);
-
-                fenStringFile = -1;
-            }
-
-            if (rank == 7)
-                continue;
-
-            if (fenStringFile > 0)
-                strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%d", fenStringFile);
-            strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%c", '/');
-        }
-
-        strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %c", board->state.whoMoves == PIECE_WHITE ? 'w' : 'b');
-
-        if (board->state.castlingWhite == 0 && board->state.castlingBlack == 0)
-            strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%s", " -");
-        else
-            strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %s%s",
-                castling_data[board->state.castlingWhite],
-                castling_data[board->state.castlingBlack + 4]);
-
-        if (board->state.enPassantSquare == 0)
-            strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%s", " -");
-        else
-            strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %c%d",
-                PieceFile(board->state.enPassantSquare) + 'a',
-                8 - PieceRank(board->state.enPassantSquare));
-
-        strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %d %d", board->state.halfmoves, board->state.fullmoves);
-
-    }
-
-
-
-
-
-bool BoardSaveFEN(ChessBoard* board) {
-
-
     const char pieces_data[6] = {
         'k', 'q', 'b', 'n', 'r', 'p',
     };
@@ -820,10 +753,8 @@ bool BoardSaveFEN(ChessBoard* board) {
     int fenStringFile;
     char pieceSymbol;
 
-    FILE* fenFile = fopen("board_fen.data", "w");
+    int strIndex = 0;
 
-    if (fenFile == NULL)
-        return false;
 
     for (int rank = 0; rank < 8; rank++) {
         fenStringFile = 0;
@@ -839,8 +770,8 @@ bool BoardSaveFEN(ChessBoard* board) {
                 pieceSymbol = toupper(pieceSymbol);
 
             if (fenStringFile > 0)
-                fprintf(fenFile, "%d", fenStringFile);
-            fprintf(fenFile, "%c", pieceSymbol);
+                strIndex += snprintf(fenString+strIndex,100-strIndex, "%d", fenStringFile);
+            strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%c", pieceSymbol);
 
             fenStringFile = -1;
         }
@@ -849,27 +780,44 @@ bool BoardSaveFEN(ChessBoard* board) {
             continue;
 
         if (fenStringFile > 0)
-            fprintf(fenFile, "%d", fenStringFile);
-        fprintf(fenFile, "/");
+            strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%d", fenStringFile);
+        strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%c", '/');
     }
 
-    fprintf(fenFile, " %c", board->state.whoMoves == PIECE_WHITE ? 'w' : 'b');
+    strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %c", board->state.whoMoves == PIECE_WHITE ? 'w' : 'b');
 
     if (board->state.castlingWhite == 0 && board->state.castlingBlack == 0)
-        fprintf(fenFile, " -");
+        strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%s", " -");
     else
-        fprintf(fenFile, " %s%s",
+        strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %s%s",
             castling_data[board->state.castlingWhite],
             castling_data[board->state.castlingBlack + 4]);
 
     if (board->state.enPassantSquare == 0)
-        fprintf(fenFile, " -");
+        strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%s", " -");
     else
-        fprintf(fenFile, " %c%d",
+        strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %c%d",
             PieceFile(board->state.enPassantSquare) + 'a',
             8 - PieceRank(board->state.enPassantSquare));
 
-    fprintf(fenFile, " %d %d", board->state.halfmoves, board->state.fullmoves);
+    strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %d %d", board->state.halfmoves, board->state.fullmoves);
+
+}
+
+
+
+
+
+bool BoardSaveFEN(ChessBoard* board) {
+    FILE* fenFile = fopen("board_fen.data", "w");
+
+    if (fenFile == NULL)
+        return false;
+
+    char fenString[100];
+    BoardGetAsFEN(board, fenString);
+
+    fprintf(fenFile, fenString);
     fclose(fenFile);
 
     return true;
@@ -900,9 +848,9 @@ bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWh
     if (updateWhoMoves) {
         board->state.halfmoves++;
 
-        if (!PieceHasType(board->squares[to], PIECE_NONE)
-            && !PieceHasColor(board->squares[to], board->state.whoMoves))
+        if (!PieceHasType(board->squares[to], PIECE_NONE) || PieceHasType(board->squares[from], PIECE_PAWN)) {
             board->state.halfmoves = 0;
+        }
     }
 
     board->state.enPassantSquare = 0;
@@ -911,17 +859,10 @@ bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWh
         board->squares[enPassantSquare] = PIECE_NONE;
         board->squares[to] = board->squares[from];
 
-        if (updateWhoMoves)
-            board->state.halfmoves = 0;
-
         break;
 
     case MOVE_PAWN_TWO_FORWARD:
         board->state.enPassantSquare = to + (PieceHasColor(board->squares[from], PIECE_BLACK) ? -8 : 8);
-
-        if (updateWhoMoves)
-            board->state.halfmoves = 0;
-
         /* fall through */
 
     case MOVE_NORMAL:
@@ -931,9 +872,6 @@ bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWh
     case MOVE_PAWN_PROMOTE:
 
         board->squares[to] = extra + PieceGetColor(board->squares[from]);
-
-        if (updateWhoMoves)
-            board->state.halfmoves = 0;
 
         break;
 
@@ -985,17 +923,6 @@ bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWh
 }
 
 bool BoardKingInCheck(ChessBoard* board, int kingColor) { 
-    /*
-    for (int square = 0; square < 64; square++) {
-        if (board->move.attackSquares[square]
-            && PieceHasType(board->squares[square], PIECE_KING)
-            && PieceHasColor(board->squares[square], kingColor)) {
-            return true;
-        }
-    }
-    return false;
-    */
-    
     return (board->move.attackSquares[board->kingSquare[kingColor == PIECE_BLACK]]);
 }
 
@@ -1062,7 +989,7 @@ void BoardUpdate(Board* board) {
 
 
     if (IsKeyPressed(KEY_SPACE)) {
-        board->viewAsWhite = !board->viewAsWhite;
+        board->xRotating = true;
     }
 
 
@@ -1092,7 +1019,8 @@ void BoardUpdate(Board* board) {
     else if (board->backButtonClicked) {
         // Essa parte está sendo implementada em backButton
     }
-    else {
+    else if (!board->xRotating) {
+       
         rank = (GetMouseY() - board->drawPosition.y) / board->squareLength;
         file = (GetMouseX() - board->drawPosition.x) / board->squareLength;
         if (!board->viewAsWhite) {
@@ -1117,7 +1045,7 @@ void BoardUpdate(Board* board) {
                     board->movingPiece.dragging = true;
                 }
 
-                    
+
             }
             else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
                 if ((board->movingPiece.dragging
@@ -1140,29 +1068,10 @@ void BoardUpdate(Board* board) {
                             else {
                                 BoardMakeMove(&board->chessBoard, pieceFrom, pieceTo, 0, true);
                                 board->positionGradeDepth = 0;
-                                testCalculationAbort = true;
+                                //testCalculationAbort = true;
                             }
                         }
-                   }
-
-                    /*
-                    else {
-                        if (board->chessBoard.move.list[pieceFrom][pieceTo] == MOVE_PAWN_PROMOTE) {
-                            board->promotion.active = true;
-                            board->promotion.from = pieceFrom;
-                            board->promotion.to = pieceTo;
-                        }
-                        else {
-
-                            board->preMove[0] = pieceFrom;
-                            board->preMove[1] = pieceTo;
-                            board->preMove[2] = 0;
-
-                            board->preMoveStored = true;
-                        }
                     }
-                    */
-
                 }
 
                 if (clicked && !board->movingPiece.selecting
@@ -1174,7 +1083,7 @@ void BoardUpdate(Board* board) {
                     board->movingPiece.dragging = false;
                 }
 
-                clicked = false;    
+                clicked = false;
             }
         }
         else {
@@ -1184,7 +1093,8 @@ void BoardUpdate(Board* board) {
         
     }
 
-    if (!isSinglePlayer) {
+    
+    /*if (!isSinglePlayer) {
         if (saxaThinkingTest) {
             if (threadMoveDataTest.finished) {
                 WaitForSingleObject(saxaMoveTestThreadId, INFINITE);
@@ -1215,7 +1125,7 @@ void BoardUpdate(Board* board) {
             }
         }
 
-    }
+    }*/
 
 
     if (isSinglePlayer && !gameEnded) {
@@ -1226,7 +1136,7 @@ void BoardUpdate(Board* board) {
                 BoardMakeMove(&board->chessBoard, board->preMove[0], board->preMove[1], board->preMove[2], true);
                 board->preMoveStored = false;
                 board->positionGradeDepth = 0;
-                testCalculationAbort = true;
+                //testCalculationAbort = true;
             }
         }
         else {
@@ -1241,7 +1151,7 @@ void BoardUpdate(Board* board) {
                     if (Move.from != -1 && Move.to != -1) {
                         BoardMakeMove(&board->chessBoard, Move.from, Move.to, Move.extra, true);
                         board->positionGradeDepth = 0;
-                        testCalculationAbort = true;
+                        //testCalculationAbort = true;
                     }
                     else {
                         printf("FreshFish is out of moves\n");
@@ -1264,6 +1174,20 @@ void BoardUpdate(Board* board) {
            
         }
     }
+
+    if (board->xRotating) {
+        board->xAngle += 500 * GetFrameTime();
+
+        board->yScale = cos(board->xAngle * (3.1415/ 180.f));
+
+        if (board->xAngle >= 180) {
+            board->xAngle = 0;
+            board->viewAsWhite = !board->viewAsWhite;
+            board->xRotating = false;
+            board->yScale = 1;
+        }
+    }
+
 
     if (board->movingPiece.dragging || board->movingPiece.selecting)
         board->movingPiece.ringRotation += 150 * GetFrameTime();
@@ -1333,8 +1257,8 @@ void drawEvaluationBar(Board* board) {
 
 void BoardDraw(Board * board, int * menu) {
     Rectangle squarePosition = {
-        board->drawPosition.x,
-        board->drawPosition.y,
+        board->drawPosition.x + board->squareLength*4,
+        board->drawPosition.y + board->squareLength*4,
 
         board->squareLength,
         board->squareLength
@@ -1354,9 +1278,24 @@ void BoardDraw(Board * board, int * menu) {
             drawRank = 7 - drawRank;
         }
 
+        float boardCenterX = (board->drawPosition.x + board->squareLength * 4);
+        float boardCenterY = (board->drawPosition.y + board->squareLength * 4);
 
-        squarePosition.x = board->drawPosition.x + squarePosition.width * PieceFile(square);
-        squarePosition.y = board->drawPosition.y + squarePosition.height * drawRank;
+        squarePosition.x = boardCenterX  + board->squareLength * board->xScale * (PieceFile(square)-4);
+        squarePosition.y = boardCenterY + board->squareLength * board->yScale * (drawRank-4);
+        squarePosition.width = abs(board->squareLength*board->xScale);
+        squarePosition.height = abs(board->squareLength*board->yScale);
+
+        if (board->yScale < 0) {
+            squarePosition.y += squarePosition.height * board->yScale;
+        }
+        if (board->xScale < 0) {
+            squarePosition.x += squarePosition.width * board->xScale;
+        }
+
+     
+
+        
 
 
         if ((drawRank + PieceFile(square)) % 2 == board->viewAsWhite) {
@@ -1756,39 +1695,11 @@ static bool isValidMove(ChessBoard board, int from, int to) {
     BoardMakeMove(&board, from, to, 0, false);
     generateMoves(&board, false);
     return !BoardKingInCheck(&board, board.state.whoMoves);
-
-
-   // return !BoardKingInCheck(&copiedBoard, copiedBoard.state.whoMoves);
-    /*
-    for (int square = 0; square < 64; square++)
-        if (board.move.attackSquares[square]
-            && PieceHasType(board.squares[square], PIECE_KING)
-            && PieceHasColor(board.squares[square], board.state.whoMoves))
-            return false;
-
-    return true;
-    */
-    
-    
-    /*
-    for (int square = 0; square < 64; square++) {
-        if (copiedBoard.move.attackSquares[square]
-            && PieceHasType(copiedBoard.squares[square], PIECE_KING)
-            && PieceHasColor(copiedBoard.squares[square], copiedBoard.state.whoMoves)) {
-            return false;
-        }
-    }
-    return true;
-    */
-    
-    //return !BoardKingInCheck(&copiedBoard, copiedBoard.state.whoMoves);
 }
 
 static void updatePromotionMenu(Board* board) {
     static int promotionSelected = 5;
 
-    //const int rank = (board->chessBoard.state.waitPromotion & 0b1000) == 0 ? 7 : 0;
-    //const int file = (board->chessBoard.state.waitPromotion - 1) & 0b0111;
 
     const Rectangle menuRectangle = {
         board->drawPosition.x + board->squareLength,
@@ -1824,7 +1735,7 @@ static void updatePromotionMenu(Board* board) {
 
             board->promotion.active = false;
             board->positionGradeDepth = 0;
-            testCalculationAbort = true;
+            //testCalculationAbort = true;
 
             promotionSelected = 5;            
             break;
