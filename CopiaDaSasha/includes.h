@@ -52,3 +52,34 @@ double moveGradeTest(ChessBoard board, saxa_move tryMove, int depth, float alpha
 static double sigmoid(double grade) {
     return 1.0 / (1.0 + pow(2.718281828, -grade));
 }
+
+#if defined(_WIN32)           
+#define NOGDI             // All GDI defines and routines
+#define NOUSER            // All USER defines and routines
+#endif
+
+#include <windows.h> // or any library that uses Windows.h
+
+#if defined(_WIN32)           // raylib uses these names as function parameters
+#undef near
+#undef far
+#endif
+
+
+
+struct ThreadMoveData {
+    ChessBoard board;
+    int depth;
+    saxa_move move;
+
+    bool finished;
+};
+
+struct ThreadMoveData threadMoveData;
+struct ThreadMoveData threadMoveDataTest;
+
+bool saxaThinking = false;
+bool saxaThinkingTest = false;
+
+bool calculationAbort = false;
+bool testCalculationAbort = false;

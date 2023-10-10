@@ -55,47 +55,7 @@ char* boardMoveToFen(ChessBoard board, int from, int to) {
 
 
 
-
-
-
-
-
-
-
-
-
-// Biblioteca do windows pra fazer thread
-#if defined(_WIN32)           
-#define NOGDI             // All GDI defines and routines
-#define NOUSER            // All USER defines and routines
-#endif
-
-#include <windows.h> // or any library that uses Windows.h
-
-#if defined(_WIN32)           // raylib uses these names as function parameters
-#undef near
-#undef far
-#endif
-
 ///this is the call function for a SAXA play
-
-
-struct ThreadMoveData {
-    ChessBoard board;
-    int depth;
-    saxa_move move;
-
-    bool finished;
-};
-
-struct ThreadMoveData threadMoveData;
-struct ThreadMoveData threadMoveDataTest;
-
-bool saxaThinking = false;
-bool saxaThinkingTest = false;
-
-bool calculationAbort = false;
-bool testCalculationAbort = false;
 
 saxa_move backtrackingMove(ChessBoard board, int depth, int saxa_color) {
     //saxaDepth = depth;
@@ -377,24 +337,7 @@ saxa_move positionBestMoveTest(ChessBoard board, int depth, float alpha, float b
             }
         }
     }
-    // }
-    /*
-    else{
-        for (int i = 0; i < moveCounter; i++) {
-            for (int j = 1; j < moveCounter - i; j++) {
-
-                if (movesOrder[j - 1].grade < movesOrder[j].grade) {
-                    saxa_move temp = movesOrder[j - 1];
-                    movesOrder[j - 1] = movesOrder[j];
-                    movesOrder[j] = temp;
-
-                }
-            }
-        }
-    }
-    */
-
-
+    
 
     // Aqui eu to dando uma nota inicial pro melhor movimento
     // Essa nota inicial tem que ser a piorzinha de todas

@@ -1296,8 +1296,6 @@ void drawBoardBackground(Board * board) {
     char fenString[100];
     BoardGetAsFEN(&board->chessBoard, fenString);
 
-    
-
     DrawText(fenString, bgInformation.x, bgInformation.y, 10, WHITE);
 
     char movesString[100];
