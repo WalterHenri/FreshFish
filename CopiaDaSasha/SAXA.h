@@ -1,5 +1,5 @@
-#pragma once
-#include "includes.h"
+#include "FreshFish.h"
+#include "Evaluate.h"
 
 /**            SAXA
 
@@ -103,9 +103,6 @@ int partitionMoves(saxa_move arr[], int low, int high) {
     swapMoves(&arr[i + 1], &arr[high]);
     return (i + 1);
 }
-
-
-
 
 
 saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta) {
@@ -402,71 +399,6 @@ double moveGradeTest(ChessBoard board, saxa_move tryMove, int depth, float alpha
     else
         return evaluatePosition(&board);
 
-}
-
-
-
-
-double evaluatePosition(ChessBoard* board) {
-
-    /*this evaluate position is simple but effective,
-    is impressive what SAXA can do just counting material,
-    returns the position weight between 0 (any activity)
-    or 1 (active)*/
-
-
-    double grade = 0;
-    int sinal;
-
-    //contando material
-    for (int rank = 0; rank < 8; rank++) {
-        for (int file = 0; file < 8; file++) {
-
-            int pieceType = PieceGetType(board->squares[rank * 8 + file]);
-            int pieceColor = PieceGetColor(board->squares[rank * 8 + file]);
-            sinal = (pieceColor == PIECE_WHITE) ? 1 : -1;
-
-            switch (pieceType) {
-            case PIECE_QUEEN:
-                grade += queenValue * sinal;
-                break;
-            case PIECE_BISHOP:
-                grade += bishopValue * sinal;
-                break;
-            case PIECE_KNIGHT:
-                grade += horseValue * sinal;
-                break;
-            case PIECE_ROOK:
-                grade += rookValue * sinal;
-                break;
-            case PIECE_PAWN:
-                grade += pawnValue * sinal;
-                break;
-            default:
-                break;
-
-            }
-        }
-    }
-
-    // Counting squares of enemies attacks
-    double attackSum = 0;
-    for (int i = 0; i < 64; i++) {
-        if (board->move.attackSquares[i] == true) {
-            attackSum += squareValue;
-        }
-    }
-
-    if (board->state.whoMoves == PIECE_WHITE) {
-        grade -= attackSum;
-    }
-    else {
-        grade += attackSum;
-    }
-
-    // E se a gente usar INT ao invés de double?
-    // 
-    return sigmoid(grade);
 }
 
 

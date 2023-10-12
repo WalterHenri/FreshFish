@@ -108,10 +108,6 @@ void myitoa(int n, char s[]) {
 }
 
 
-
-
-
-
 void updateSetPosition(Board* board) {
 #define CLICK_TIME 0.15
     static double clickTime = 0;

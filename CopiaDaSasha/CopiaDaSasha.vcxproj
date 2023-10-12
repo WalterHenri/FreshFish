@@ -136,7 +136,8 @@
     <ClInclude Include="cardapio.h" />
     <ClInclude Include="Endgame.h" />
     <ClInclude Include="Evaluate.h" />
-    <ClInclude Include="includes.h" />
+    <ClInclude Include="FreshFish.h" />
+    <ClInclude Include="MemoEvaluate.h" />
     <ClInclude Include="Piece.h" />
     <ClInclude Include="SAXA.h" />
   </ItemGroup>
