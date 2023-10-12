@@ -133,6 +133,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Board.h" />
+    <ClInclude Include="cardapio.h" />
     <ClInclude Include="Endgame.h" />
     <ClInclude Include="Evaluate.h" />
     <ClInclude Include="includes.h" />

@@ -2,7 +2,6 @@
 
 #include "raylib.h"
 
-
 #include "Board.h"
 #include <stdio.h>
 

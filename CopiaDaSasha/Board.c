@@ -35,6 +35,8 @@ Texture2D bgLeft;
 Font titleFont;
 Font optionsFont;
 
+#include "cardapio.h"
+
 /* Internal helpers functions
  */
 static void findKings(ChessBoard* board);
@@ -105,358 +107,10 @@ void myitoa(int n, char s[]) {
     reverse(s);
 }
 
-bool checkTextColision(Vector2 origin,Vector2 position,Font font,char* text,int fontSize,int spacing) {
 
-    Vector2 size = MeasureTextEx(font, text, fontSize, spacing);
-    if ((origin.x >= position.x && origin.x <= position.x + size.x)
-        && (origin.y >= position.y- size.y/2 && origin.y <= position.y + size.y/2)) {
-        return true;
-    }
-    else {
-        return false;
-    }
-}
 
 
 
-void menu(int* menuorboard) {
-    /*
-        usamos essas variaveis para pegar o tamanho da tela e baseamos
-    o tamanho do texto das sprites e as posições nessas variáveis.
-    */
-
-    const float screenHeight = GetScreenHeight();
-    const float screenwidth = GetScreenWidth();
-
-    Vector2 mousePoint = GetMousePosition();
-
-    BeginDrawing();
-    ClearBackground(BLACK);
-    DrawTexture(background,0,0,WHITE);
-
-    Vector2 positionTitle;
-    const int spacing = 2;
-    const int fontSizeTitle = screenHeight / 6;
-
-    positionTitle.x = screenwidth / 2 - MeasureTextEx(titleFont,"Fresh Fish",fontSizeTitle,2).x / 2;
-    positionTitle.y = screenHeight / 3;
-
-    DrawTextEx(titleFont,"Fresh Fish", positionTitle, fontSizeTitle,spacing,WHITE);
-    
-    const int fontSizeOption = screenHeight / 20;
-    Vector2 positionJogar;
-    positionJogar.x = screenwidth / 2 - MeasureTextEx(optionsFont, "JOGAR", fontSizeOption, 2).x / 2;
-    positionJogar.y = screenHeight / 2;
-
-    DrawTextEx(optionsFont,"JOGAR",positionJogar,fontSizeOption,spacing, WHITE);
-
-    Vector2 positionOpcoes;
-    positionOpcoes.x = screenwidth / 2 - MeasureTextEx(optionsFont, "OPCOES", fontSizeOption, 2).x / 2;
-    positionOpcoes.y = positionJogar.y + (MeasureTextEx(optionsFont, "JOGAR", fontSizeOption, 2).y);
-
-    DrawTextEx(optionsFont, "OPCOES", positionOpcoes, fontSizeOption, spacing, WHITE);
-
-    Vector2 positionSair;
-    positionSair.x = screenwidth / 2 - MeasureTextEx(optionsFont, "SAIR", fontSizeOption, 2).x / 2;
-    positionSair.y = positionOpcoes.y + (MeasureTextEx(optionsFont, "OPCOES", fontSizeOption, 2).y);
-
-    DrawTextEx(optionsFont, "SAIR", positionSair, fontSizeOption, spacing, WHITE);
-
-    
-    
-    if (checkTextColision(mousePoint,positionJogar,optionsFont,"JOGAR",fontSizeOption,spacing)) {
-        DrawTextEx(optionsFont, "JOGAR", positionJogar, fontSizeOption, spacing, YELLOW);
-    
-        Vector2 newPosition = positionJogar;
-        const double scale = 0.15;
-        newPosition.x -= scale * playHoverText.width + spacing;
-        DrawTextureEx(playHoverText, newPosition,0,scale,WHITE);
-
-        if (IsMouseButtonPressed(0)) {
-            *menuorboard = 3;
-        }
-    }
-
-    if (checkTextColision(mousePoint, positionOpcoes, optionsFont, "OPCOES", fontSizeOption, spacing)) {
-        DrawTextEx(optionsFont, "OPCOES", positionOpcoes, fontSizeOption, spacing, YELLOW);
-
-        Vector2 newPosition = positionOpcoes;
-        const double scale = 0.1;
-        newPosition.x -= scale * playHoverText.width + spacing * 4;
-        DrawTextureEx(optionHoverText, newPosition, 0, scale, WHITE);
-
-        if (IsMouseButtonPressed(0)) {
-            *menuorboard = 6;
-            selectionB = 0;
-        }
-    }
-
-    if (checkTextColision(mousePoint, positionSair, optionsFont, "SAIR", fontSizeOption, spacing)) {
-        DrawTextEx(optionsFont, "SAIR", positionSair, fontSizeOption, spacing, YELLOW);
-        if (IsMouseButtonPressed(0))
-            exit(0);
-    }
-    
-
-    EndDrawing();
-}
-
-void GameBoard(int* menuorboard) {
-
-    float screenHeight = GetScreenHeight();
-    float screenwidth = GetScreenWidth();
-
-    float buttonWidth = screenwidth / 20;
-    float buttonHeight = screenHeight / 14;
-
-    float squareSize = screenHeight / 20;
-    float squarex = screenwidth / 2 - squareSize * 4;
-    float squarey = screenHeight / 2 - squareSize * 4;
-
-
-    Vector2 mousePoint = GetMousePosition();
-
-    BeginDrawing();
-
-
-    ClearBackground(GRAY);
-
-
-
-    Rectangle previous = { screenwidth / 4 - buttonWidth,screenHeight / 2 - buttonHeight / 2,buttonWidth,buttonHeight };
-    Rectangle next = { (screenwidth * 3) / 4 - buttonWidth / 2,screenHeight / 2 - buttonHeight / 2,buttonWidth,buttonHeight };
-    Rectangle voltar = { screenwidth / 4 - buttonWidth,(screenHeight * 3) / 4,buttonWidth * 4,buttonHeight };
-
-
-
-    DrawRectangleRec(previous, YELLOW);
-    DrawText("<-", screenwidth / 4 - buttonWidth + screenwidth / 1000,
-        screenHeight / 2 - buttonHeight / 2 + screenHeight / 1000,
-        screenwidth / 20, BLACK);
-
-    DrawRectangleRec(next, YELLOW);
-
-    DrawText("->", (screenwidth * 3) / 4 - buttonWidth / 2 + screenwidth / 1000,
-        screenHeight / 2 - buttonHeight / 2 + screenHeight / 1000,
-        screenwidth / 20, BLACK);
-
-    DrawRectangleRec(voltar, YELLOW);
-
-    DrawText("voltar", screenwidth / 4, (screenHeight * 3) / 4, screenwidth / 30, BLACK);
-
-    if (CheckCollisionPointRec(mousePoint, voltar)) {
-
-        DrawText("voltar", screenwidth / 4, (screenHeight * 3) / 4, screenwidth / 30, WHITE);
-
-        if (IsMouseButtonPressed(0)) {
-            *menuorboard = 0;
-        }
-    }
-
-    if (CheckCollisionPointRec(mousePoint, previous)) {
-
-        DrawText("<-", screenwidth / 4 - buttonWidth + screenwidth / 1000,
-            screenHeight / 2 - buttonHeight / 2 + screenHeight / 1000,
-            screenwidth / 20, WHITE);
-
-        if (IsMouseButtonPressed(0)) {
-            if (selectionB > 0) {
-                selectionB--;
-            }
-            else {
-                selectionB = 10;
-            }
-        }
-    }
-
-    if (CheckCollisionPointRec(mousePoint, next)) {
-
-        DrawText("->", (screenwidth * 3) / 4 - buttonWidth / 2 + screenwidth / 1000,
-            screenHeight / 2 - buttonHeight / 2 + screenHeight / 1000,
-            screenwidth / 20, WHITE);
-
-        if (IsMouseButtonPressed(0))
-            if (selectionB < 10) {
-                selectionB++;
-            }
-            else {
-                selectionB = 0;
-            }
-    }
-
-    char cores[11][50] = { "rosinha", "azul","roxinho","verdinho",
-                         "dourado","vermelho","vinho","esgoto","beeeje","escuro",
-                         "rosa choque"
-    };
-
-    Color colors[11] = { PINK,SKYBLUE,PURPLE,GREEN,
-                        GOLD,RED,MAROON,LIME,BEIGE,BLACK,MAGENTA
-    };
-
-    DrawText(cores[selectionB], screenwidth / 2 - screenwidth / 10,
-        screenHeight / 10, screenwidth / 20, colors[selectionB]);
-
-
-
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            Color cor = ((i + j) % 2 == 0) ? WHITE : colors[selectionB];
-            DrawRectangle(squarex + (j * squareSize), squarey + (i * squareSize), squareSize, squareSize, cor);
-        }
-    }
-
-    EndDrawing();
-}
-
-
-void gamemode(int* menuorboard) {
-
-    float screenHeight = GetScreenHeight();
-    float screenwidth = GetScreenWidth();
-
-    Vector2 mousePoint = GetMousePosition();
-
-    BeginDrawing();
-    ClearBackground(BLACK);
-    DrawTexture(background2, 0, 0, WHITE);
-
-    
-
-    Vector2 positionTitle;
-    int spacing = 2;
-    int fontSizeTitle = screenHeight / 6;
-
-    positionTitle.x = screenwidth / 2 - MeasureTextEx(titleFont, "Modo De Jogo", fontSizeTitle, 2).x / 2;
-    positionTitle.y = screenHeight / 3;
-
-    DrawTextEx(titleFont, "Modo De Jogo", positionTitle, fontSizeTitle, spacing, WHITE);
-
-    int fontSizeOption = screenHeight / 20;
-    Vector2 positionJogar;
-    positionJogar.x = screenwidth / 2 - MeasureTextEx(optionsFont, "DOIS JOGADORES", fontSizeOption, 2).x / 2;
-    positionJogar.y = screenHeight / 2;
-
-    DrawTextEx(optionsFont, "DOIS JOGADORES", positionJogar, fontSizeOption, spacing, WHITE);
-
-    Vector2 positionOpcoes;
-    positionOpcoes.x = screenwidth / 2 - MeasureTextEx(optionsFont, "CONTRA O COMPUTADOR", fontSizeOption, 2).x / 2;
-    positionOpcoes.y = positionJogar.y + (MeasureTextEx(optionsFont, "DOIS JOGADORES", fontSizeOption, 2).y);
-
-    DrawTextEx(optionsFont, "CONTRA O COMPUTADOR", positionOpcoes, fontSizeOption, spacing, WHITE);
-
-    Vector2 positionSair;
-    positionSair.x = screenwidth / 2 - MeasureTextEx(optionsFont, "RETROCEDER", fontSizeOption, 2).x / 2;
-    positionSair.y = positionOpcoes.y + (MeasureTextEx(optionsFont, "CONTRA O COMPUTADOR", fontSizeOption, 2).y);
-
-    DrawTextEx(optionsFont, "RETROCEDER", positionSair, fontSizeOption, spacing, WHITE);
-
-
-    if (checkTextColision(mousePoint, positionJogar, optionsFont, "DOIS JOGADORES", fontSizeOption, spacing)) {
-        DrawTextEx(optionsFont, "DOIS JOGADORES", positionJogar, fontSizeOption, spacing, YELLOW);
-
-        if (IsMouseButtonPressed(0)) {
-            isSinglePlayer = 0;
-            *menuorboard = 1;
-        }
-    }
-
-    if (checkTextColision(mousePoint, positionOpcoes, optionsFont, "CONTRA O COMPUTADOR", fontSizeOption, spacing)) {
-        DrawTextEx(optionsFont, "CONTRA O COMPUTADOR", positionOpcoes, fontSizeOption, spacing, YELLOW);
-        if (IsMouseButtonPressed(0)) {
-            *menuorboard = 4;
-        }
-    }
-
-    if (checkTextColision(mousePoint, positionSair, optionsFont, "RETROCEDER", fontSizeOption, spacing)) {
-        DrawTextEx(optionsFont, "RETROCEDER", positionSair, fontSizeOption, spacing, YELLOW);
-        if (IsMouseButtonPressed(0))
-            *menuorboard = 0;
-    }
-
-
-    EndDrawing();
-
-  
-
-}
-
-void gameDificult(int* menuorboard) {
-
-    float screenHeight = GetScreenHeight();
-    float screenwidth = GetScreenWidth();
-
-    Vector2 mousePoint = GetMousePosition();
-
-    BeginDrawing();
-    ClearBackground(BLACK);
-    DrawTexture(background2, 0, 0, WHITE);
-
-
-    int spacing = 2;
-    int fontSizeOption = screenHeight / 20;
-    Vector2 positionJogar;
-    positionJogar.x = screenwidth / 2 - MeasureTextEx(optionsFont, "FACIL", fontSizeOption, 2).x / 2;
-    positionJogar.y = screenHeight / 3;
-
-    DrawTextEx(optionsFont, "FACIL", positionJogar, fontSizeOption, spacing, WHITE);
-
-    Vector2 positionOpcoes;
-    positionOpcoes.x = screenwidth / 2 - MeasureTextEx(optionsFont, "INTERMEDIARIO", fontSizeOption, 2).x / 2;
-    positionOpcoes.y = positionJogar.y + (MeasureTextEx(optionsFont, "FACIL", fontSizeOption, 2).y)*2;
-
-    DrawTextEx(optionsFont, "INTERMEDIARIO", positionOpcoes, fontSizeOption, spacing, WHITE);
-
-    Vector2 positionSair;
-    positionSair.x = screenwidth / 2 - MeasureTextEx(optionsFont, "COMPLEXO", fontSizeOption, 2).x / 2;
-    positionSair.y = positionOpcoes.y + (MeasureTextEx(optionsFont, "INTERMEDIARIO", fontSizeOption, 2).y * 2);
-
-    DrawTextEx(optionsFont, "COMPLEXO", positionSair, fontSizeOption, spacing, WHITE);
-
-    Vector2 positionSair2;
-    positionSair2.x = screenwidth / 2 - MeasureTextEx(optionsFont, "RETROCEDER", fontSizeOption, 2).x / 2;
-    positionSair2.y = positionSair.y + (MeasureTextEx(optionsFont, "INTERMEDIARIO", fontSizeOption, 2).y * 2);
-
-    DrawTextEx(optionsFont, "RETROCEDER", positionSair2, fontSizeOption, spacing, WHITE);
-
-    if (checkTextColision(mousePoint, positionJogar, optionsFont, "FACIL", fontSizeOption, spacing)) {
-        DrawTextEx(optionsFont, "FACIL", positionJogar, fontSizeOption, spacing, YELLOW);
-
-        if (IsMouseButtonPressed(0)) {
-            isSinglePlayer = 1;
-            saxaDephtBoard = 1;
-            *menuorboard = 1;
-        }
-    }
-
-    if (checkTextColision(mousePoint, positionOpcoes, optionsFont, "INTERMEDIARIO", fontSizeOption, spacing)) {
-        DrawTextEx(optionsFont, "INTERMEDIARIO", positionOpcoes, fontSizeOption, spacing, YELLOW);
-        if (IsMouseButtonPressed(0)) {
-            isSinglePlayer = 1;
-            saxaDephtBoard = 2;
-            *menuorboard = 1;
-        }
-    }
-
-    if (checkTextColision(mousePoint, positionSair, optionsFont, "COMPLEXO", fontSizeOption, spacing)) {
-        DrawTextEx(optionsFont, "COMPLEXO", positionSair, fontSizeOption, spacing, YELLOW);
-        if (IsMouseButtonPressed(0))
-        {
-            isSinglePlayer = 1;
-            saxaDephtBoard = 3;
-            *menuorboard = 1;
-        }
-    }
-
-    if (checkTextColision(mousePoint, positionSair2, optionsFont, "RETROCEDER", fontSizeOption, spacing)) {
-        DrawTextEx(optionsFont, "RETROCEDER", positionSair2, fontSizeOption, spacing, YELLOW);
-        if (IsMouseButtonPressed(0))
-        {
-            *menuorboard = 3;
-        }
-    }
-
-    EndDrawing();
-}
 
 void updateSetPosition(Board* board) {
 #define CLICK_TIME 0.15
@@ -585,6 +239,10 @@ Board BoardInit(int screenWidth, int screenHeight) {
     board.pieceSpriteSheet = LoadTexture("assets/chess_pieces.png");
     board.pieceSpriteSize.x = board.pieceSpriteSheet.width / 6.f;
     board.pieceSpriteSize.y = board.pieceSpriteSheet.height / 2.f,
+
+    board.yScale = 1;
+    board.xScale = 1;
+
   
 
     board.chessBoard.state.fullmoves = 1;
@@ -609,6 +267,48 @@ void _BoardInit(Board* board) {
 
     BoardLoadFEN(&board->chessBoard, BOARD_FEN_DEFAULT);
 }
+
+char* boardMoveToFen(ChessBoard board, int from, int to) {
+    char pieces[] = { 'K', 'Q', 'B', 'N', 'R' };
+    char files[] = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' };
+
+    char* string = (char*)malloc(sizeof(char) * 9);
+    int index = 0;
+
+    Piece fromPiece = board.squares[from];
+    Piece toPiece = board.squares[to];
+
+    if (PieceGetType(fromPiece) == PIECE_PAWN) {
+        if (PieceFile(from) != PieceFile(to) && toPiece == PIECE_NONE) {
+            string[index++] = files[PieceFile(from)]; // Add the source file if it's not a capture
+        }
+        if (toPiece != PIECE_NONE) {
+            string[index++] = 'x';
+        }
+        string[index++] = files[PieceFile(to)];
+        string[index++] = '1' + (7 - PieceRank(to)); // Add target rank
+
+        // Handle pawn promotion (e.g., "e8=Q")
+        if (PieceRank(to) == 0 || PieceRank(to) == 7) {
+            string[index++] = '=';
+            string[index++] = pieces[PieceGetType(toPiece) - 1];
+        }
+    }
+    else {
+        string[index++] = pieces[PieceGetType(fromPiece) - 1];
+        if (toPiece != PIECE_NONE) {
+            string[index++] = 'x';
+        }
+        string[index++] = files[PieceFile(to)];
+        string[index++] = '1' + (7 - PieceRank(to)); // Add target rank
+    }
+
+    // Null-terminate the string
+    string[index] = '\0';
+
+    return string;
+}
+
 
 bool BoardLoadFEN(ChessBoard* board, const char fen[BOARD_FEN_LENGTH]) {
     const char pieces_data[12] = {
@@ -736,77 +436,6 @@ bool _BoardLoadFEN(ChessBoard* board) {
 void BoardGetAsFEN(ChessBoard* board, char fenString[100]) {
 
 
-        const char pieces_data[6] = {
-            'k', 'q', 'b', 'n', 'r', 'p',
-        };
-
-        const char castling_data[8][3] = {
-            "", "K", "Q", "KQ",
-            "", "k", "q", "kq",
-        };
-
-        int square;
-        int fenStringFile;
-        char pieceSymbol;
-
-        int strIndex = 0;
-
-
-        for (int rank = 0; rank < 8; rank++) {
-            fenStringFile = 0;
-
-            for (int file = 0; file < 8; file++, fenStringFile++) {
-                square = PieceSquare(rank, file);
-
-                if (board->squares[square] == PIECE_NONE)
-                    continue;
-
-                pieceSymbol = pieces_data[PieceGetType(board->squares[square]) - 1];
-                if (PieceGetColor(board->squares[square]) == PIECE_WHITE)
-                    pieceSymbol = toupper(pieceSymbol);
-
-                if (fenStringFile > 0)
-                    strIndex += snprintf(fenString+strIndex,100-strIndex, "%d", fenStringFile);
-                strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%c", pieceSymbol);
-
-                fenStringFile = -1;
-            }
-
-            if (rank == 7)
-                continue;
-
-            if (fenStringFile > 0)
-                strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%d", fenStringFile);
-            strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%c", '/');
-        }
-
-        strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %c", board->state.whoMoves == PIECE_WHITE ? 'w' : 'b');
-
-        if (board->state.castlingWhite == 0 && board->state.castlingBlack == 0)
-            strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%s", " -");
-        else
-            strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %s%s",
-                castling_data[board->state.castlingWhite],
-                castling_data[board->state.castlingBlack + 4]);
-
-        if (board->state.enPassantSquare == 0)
-            strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%s", " -");
-        else
-            strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %c%d",
-                PieceFile(board->state.enPassantSquare) + 'a',
-                8 - PieceRank(board->state.enPassantSquare));
-
-        strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %d %d", board->state.halfmoves, board->state.fullmoves);
-
-    }
-
-
-
-
-
-bool BoardSaveFEN(ChessBoard* board) {
-
-
     const char pieces_data[6] = {
         'k', 'q', 'b', 'n', 'r', 'p',
     };
@@ -820,10 +449,8 @@ bool BoardSaveFEN(ChessBoard* board) {
     int fenStringFile;
     char pieceSymbol;
 
-    FILE* fenFile = fopen("board_fen.data", "w");
+    int strIndex = 0;
 
-    if (fenFile == NULL)
-        return false;
 
     for (int rank = 0; rank < 8; rank++) {
         fenStringFile = 0;
@@ -839,8 +466,8 @@ bool BoardSaveFEN(ChessBoard* board) {
                 pieceSymbol = toupper(pieceSymbol);
 
             if (fenStringFile > 0)
-                fprintf(fenFile, "%d", fenStringFile);
-            fprintf(fenFile, "%c", pieceSymbol);
+                strIndex += snprintf(fenString+strIndex,100-strIndex, "%d", fenStringFile);
+            strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%c", pieceSymbol);
 
             fenStringFile = -1;
         }
@@ -849,27 +476,44 @@ bool BoardSaveFEN(ChessBoard* board) {
             continue;
 
         if (fenStringFile > 0)
-            fprintf(fenFile, "%d", fenStringFile);
-        fprintf(fenFile, "/");
+            strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%d", fenStringFile);
+        strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%c", '/');
     }
 
-    fprintf(fenFile, " %c", board->state.whoMoves == PIECE_WHITE ? 'w' : 'b');
+    strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %c", board->state.whoMoves == PIECE_WHITE ? 'w' : 'b');
 
     if (board->state.castlingWhite == 0 && board->state.castlingBlack == 0)
-        fprintf(fenFile, " -");
+        strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%s", " -");
     else
-        fprintf(fenFile, " %s%s",
+        strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %s%s",
             castling_data[board->state.castlingWhite],
             castling_data[board->state.castlingBlack + 4]);
 
     if (board->state.enPassantSquare == 0)
-        fprintf(fenFile, " -");
+        strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%s", " -");
     else
-        fprintf(fenFile, " %c%d",
+        strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %c%d",
             PieceFile(board->state.enPassantSquare) + 'a',
             8 - PieceRank(board->state.enPassantSquare));
 
-    fprintf(fenFile, " %d %d", board->state.halfmoves, board->state.fullmoves);
+    strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %d %d", board->state.halfmoves, board->state.fullmoves);
+
+}
+
+
+
+
+
+bool BoardSaveFEN(ChessBoard* board) {
+    FILE* fenFile = fopen("board_fen.data", "w");
+
+    if (fenFile == NULL)
+        return false;
+
+    char fenString[100];
+    BoardGetAsFEN(board, fenString);
+
+    fprintf(fenFile, fenString);
     fclose(fenFile);
 
     return true;
@@ -891,7 +535,7 @@ void BoardResize(Board* board, int screenWidth, int screenHeight) {
 bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWhoMoves) {
     if (board->move.list[from][to] == MOVE_NONE || from == to)
         return false;
-
+         
     const int enPassantSquare = board->state.enPassantSquare
         + (PieceHasColor(board->squares[from], PIECE_BLACK) ? -8 : 8);
 
@@ -900,9 +544,9 @@ bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWh
     if (updateWhoMoves) {
         board->state.halfmoves++;
 
-        if (!PieceHasType(board->squares[to], PIECE_NONE)
-            && !PieceHasColor(board->squares[to], board->state.whoMoves))
+        if (!PieceHasType(board->squares[to], PIECE_NONE) || PieceHasType(board->squares[from], PIECE_PAWN)) {
             board->state.halfmoves = 0;
+        }
     }
 
     board->state.enPassantSquare = 0;
@@ -911,17 +555,10 @@ bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWh
         board->squares[enPassantSquare] = PIECE_NONE;
         board->squares[to] = board->squares[from];
 
-        if (updateWhoMoves)
-            board->state.halfmoves = 0;
-
         break;
 
     case MOVE_PAWN_TWO_FORWARD:
         board->state.enPassantSquare = to + (PieceHasColor(board->squares[from], PIECE_BLACK) ? -8 : 8);
-
-        if (updateWhoMoves)
-            board->state.halfmoves = 0;
-
         /* fall through */
 
     case MOVE_NORMAL:
@@ -931,9 +568,6 @@ bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWh
     case MOVE_PAWN_PROMOTE:
 
         board->squares[to] = extra + PieceGetColor(board->squares[from]);
-
-        if (updateWhoMoves)
-            board->state.halfmoves = 0;
 
         break;
 
@@ -985,17 +619,6 @@ bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWh
 }
 
 bool BoardKingInCheck(ChessBoard* board, int kingColor) { 
-    /*
-    for (int square = 0; square < 64; square++) {
-        if (board->move.attackSquares[square]
-            && PieceHasType(board->squares[square], PIECE_KING)
-            && PieceHasColor(board->squares[square], kingColor)) {
-            return true;
-        }
-    }
-    return false;
-    */
-    
     return (board->move.attackSquares[board->kingSquare[kingColor == PIECE_BLACK]]);
 }
 
@@ -1062,7 +685,7 @@ void BoardUpdate(Board* board) {
 
 
     if (IsKeyPressed(KEY_SPACE)) {
-        board->viewAsWhite = !board->viewAsWhite;
+        board->xRotating = true;
     }
 
 
@@ -1092,7 +715,8 @@ void BoardUpdate(Board* board) {
     else if (board->backButtonClicked) {
         // Essa parte está sendo implementada em backButton
     }
-    else {
+    else if (!board->xRotating) {
+       
         rank = (GetMouseY() - board->drawPosition.y) / board->squareLength;
         file = (GetMouseX() - board->drawPosition.x) / board->squareLength;
         if (!board->viewAsWhite) {
@@ -1117,7 +741,7 @@ void BoardUpdate(Board* board) {
                     board->movingPiece.dragging = true;
                 }
 
-                    
+
             }
             else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
                 if ((board->movingPiece.dragging
@@ -1140,29 +764,10 @@ void BoardUpdate(Board* board) {
                             else {
                                 BoardMakeMove(&board->chessBoard, pieceFrom, pieceTo, 0, true);
                                 board->positionGradeDepth = 0;
-                                testCalculationAbort = true;
+                                //testCalculationAbort = true;
                             }
                         }
-                   }
-
-                    /*
-                    else {
-                        if (board->chessBoard.move.list[pieceFrom][pieceTo] == MOVE_PAWN_PROMOTE) {
-                            board->promotion.active = true;
-                            board->promotion.from = pieceFrom;
-                            board->promotion.to = pieceTo;
-                        }
-                        else {
-
-                            board->preMove[0] = pieceFrom;
-                            board->preMove[1] = pieceTo;
-                            board->preMove[2] = 0;
-
-                            board->preMoveStored = true;
-                        }
                     }
-                    */
-
                 }
 
                 if (clicked && !board->movingPiece.selecting
@@ -1174,7 +779,7 @@ void BoardUpdate(Board* board) {
                     board->movingPiece.dragging = false;
                 }
 
-                clicked = false;    
+                clicked = false;
             }
         }
         else {
@@ -1184,40 +789,7 @@ void BoardUpdate(Board* board) {
         
     }
 
-    if (!isSinglePlayer) {
-        if (saxaThinkingTest) {
-            if (threadMoveDataTest.finished) {
-                WaitForSingleObject(saxaMoveTestThreadId, INFINITE);
-                CloseHandle(saxaMoveTestThreadId);
-
-                saxa_move Move = threadMoveDataTest.move;
-
-                if (Move.from != -1 && Move.to != -1) {
-                    board->positionGrade = Move.grade;
-                    board->positionGradeDepth++;
-                }
-
-                saxaThinkingTest = false;
-                testCalculationAbort = false;
-            }
-        }
-        else {
-            if (board->positionGradeDepth <= 2) {
-                threadMoveDataTest.board = board->chessBoard;
-                threadMoveDataTest.finished = false;
-                threadMoveDataTest.depth = board->positionGradeDepth;
-
-                saxaMoveTestThreadId = CreateThread(NULL, 0, backtrackingMoveTestThreaded, &threadMoveDataTest, 0, NULL);
-
-                if (saxaMoveTestThreadId != NULL) {
-                    saxaThinkingTest = true;
-                }
-            }
-        }
-
-    }
-
-
+    
     if (isSinglePlayer && !gameEnded) {
 
 
@@ -1226,7 +798,7 @@ void BoardUpdate(Board* board) {
                 BoardMakeMove(&board->chessBoard, board->preMove[0], board->preMove[1], board->preMove[2], true);
                 board->preMoveStored = false;
                 board->positionGradeDepth = 0;
-                testCalculationAbort = true;
+                //testCalculationAbort = true;
             }
         }
         else {
@@ -1241,7 +813,7 @@ void BoardUpdate(Board* board) {
                     if (Move.from != -1 && Move.to != -1) {
                         BoardMakeMove(&board->chessBoard, Move.from, Move.to, Move.extra, true);
                         board->positionGradeDepth = 0;
-                        testCalculationAbort = true;
+                        //testCalculationAbort = true;
                     }
                     else {
                         printf("FreshFish is out of moves\n");
@@ -1264,6 +836,20 @@ void BoardUpdate(Board* board) {
            
         }
     }
+
+    if (board->xRotating) {
+        board->xAngle += 500 * GetFrameTime();
+
+        board->yScale = cos(board->xAngle * (3.1415/ 180.f));
+
+        if (board->xAngle >= 180) {
+            board->xAngle = 0;
+            board->viewAsWhite = !board->viewAsWhite;
+            board->xRotating = false;
+            board->yScale = 1;
+        }
+    }
+
 
     if (board->movingPiece.dragging || board->movingPiece.selecting)
         board->movingPiece.ringRotation += 150 * GetFrameTime();
@@ -1292,7 +878,7 @@ void drawBoardBackground(Board * board) {
 
     DrawRectangleRec(bgInformation, bgInformationColor);
     DrawTexture(bgLeft,0,0,WHITE);
-
+    /*
     char fenString[100];
     BoardGetAsFEN(&board->chessBoard, fenString);
 
@@ -1305,6 +891,7 @@ void drawBoardBackground(Board * board) {
     char hmovesString[100];
     sprintf(hmovesString, "%d", board->chessBoard.state.halfmoves);
     DrawText(hmovesString, bgInformation.x, bgInformation.y + 40, 10, WHITE);
+    */
 }
 
 void drawEvaluationBar(Board* board) {
@@ -1331,8 +918,8 @@ void drawEvaluationBar(Board* board) {
 
 void BoardDraw(Board * board, int * menu) {
     Rectangle squarePosition = {
-        board->drawPosition.x,
-        board->drawPosition.y,
+        board->drawPosition.x + board->squareLength*4,
+        board->drawPosition.y + board->squareLength*4,
 
         board->squareLength,
         board->squareLength
@@ -1352,9 +939,24 @@ void BoardDraw(Board * board, int * menu) {
             drawRank = 7 - drawRank;
         }
 
+        float boardCenterX = (board->drawPosition.x + board->squareLength * 4);
+        float boardCenterY = (board->drawPosition.y + board->squareLength * 4);
 
-        squarePosition.x = board->drawPosition.x + squarePosition.width * PieceFile(square);
-        squarePosition.y = board->drawPosition.y + squarePosition.height * drawRank;
+        squarePosition.x = boardCenterX  + board->squareLength * board->xScale * (PieceFile(square)-4);
+        squarePosition.y = boardCenterY + board->squareLength * board->yScale * (drawRank-4);
+        squarePosition.width = abs(board->squareLength*board->xScale);
+        squarePosition.height = abs(board->squareLength*board->yScale);
+
+        if (board->yScale < 0) {
+            squarePosition.y += squarePosition.height * board->yScale;
+        }
+        if (board->xScale < 0) {
+            squarePosition.x += squarePosition.width * board->xScale;
+        }
+
+     
+
+        
 
 
         if ((drawRank + PieceFile(square)) % 2 == board->viewAsWhite) {
@@ -1754,39 +1356,11 @@ static bool isValidMove(ChessBoard board, int from, int to) {
     BoardMakeMove(&board, from, to, 0, false);
     generateMoves(&board, false);
     return !BoardKingInCheck(&board, board.state.whoMoves);
-
-
-   // return !BoardKingInCheck(&copiedBoard, copiedBoard.state.whoMoves);
-    /*
-    for (int square = 0; square < 64; square++)
-        if (board.move.attackSquares[square]
-            && PieceHasType(board.squares[square], PIECE_KING)
-            && PieceHasColor(board.squares[square], board.state.whoMoves))
-            return false;
-
-    return true;
-    */
-    
-    
-    /*
-    for (int square = 0; square < 64; square++) {
-        if (copiedBoard.move.attackSquares[square]
-            && PieceHasType(copiedBoard.squares[square], PIECE_KING)
-            && PieceHasColor(copiedBoard.squares[square], copiedBoard.state.whoMoves)) {
-            return false;
-        }
-    }
-    return true;
-    */
-    
-    //return !BoardKingInCheck(&copiedBoard, copiedBoard.state.whoMoves);
 }
 
 static void updatePromotionMenu(Board* board) {
     static int promotionSelected = 5;
 
-    //const int rank = (board->chessBoard.state.waitPromotion & 0b1000) == 0 ? 7 : 0;
-    //const int file = (board->chessBoard.state.waitPromotion - 1) & 0b0111;
 
     const Rectangle menuRectangle = {
         board->drawPosition.x + board->squareLength,
@@ -1822,7 +1396,7 @@ static void updatePromotionMenu(Board* board) {
 
             board->promotion.active = false;
             board->positionGradeDepth = 0;
-            testCalculationAbort = true;
+            //testCalculationAbort = true;
 
             promotionSelected = 5;            
             break;
@@ -2086,7 +1660,7 @@ static void drawDraggingPiece(Board board, Rectangle drawPosition) {
 
 int boardInDraw(ChessBoard * board) {
 
-    if (board->move.count <= 0) {
+    if (board->move.count <= 0 && !(BoardKingInMate(board,PIECE_BLACK) || BoardKingInMate(board,PIECE_WHITE))) {
         return 1;
     }
     return 0;

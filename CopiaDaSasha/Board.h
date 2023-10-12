@@ -50,8 +50,6 @@ typedef struct {
 
 typedef struct {
 
-    
-
     int squares[64];
 
     struct {
@@ -120,6 +118,13 @@ typedef struct {
 
     bool viewAsWhite;
 
+    bool xRotating;
+    float xAngle;
+
+    float yScale;
+    float xScale;
+    
+
     int positionGradeDepth;
     float positionGrade;
 
@@ -136,8 +141,6 @@ void menu(int* menuorboard);
 
 void gamemode(int* menuorboard);
 
-void tutorial(int* menuorboard);
-
 void menuInit();
 
 // Inicializa um novo tabuleiro
@@ -152,6 +155,7 @@ bool BoardLoadFEN(ChessBoard* board, const char fen[BOARD_FEN_LENGTH]);
 // Carrega a FEN de um arquivo
 bool _BoardLoadFEN(ChessBoard* board);
 
+char* boardMoveToFen(ChessBoard board, int from, int to);
 void BoardUnload(Board* board);
 
 void BoardResize(Board* board, int screenWidth, int screenHeight);
