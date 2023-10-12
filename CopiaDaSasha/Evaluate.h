@@ -3,14 +3,18 @@
 
 /*global variables*/
 
-int pawnValue = 1;
-int horseValue = 3;
-int bishopValue = 3;
-int rookValue = 5;
-int queenValue = 9;
-int kingValue = 1;
+#define WORST_THING_POSSIBLE (INT_MIN+100)
+#define ONE_OF_THE_THINGS_POSSIBLE 0;
+#define BEST_THING_POSSIBLE (INT_MAX-100)
 
-float squareValue = 0.1;
+
+#define PAWNVALUE 100
+#define KNIGHTVALUE 300
+#define BISHOPVALUE 300
+#define ROOKVALUE 500
+#define QUEENVALUE 900
+
+#define ATTACKSQUAREVALUE 5
 
 /* this function returns a value between zero and one*/
 static double sigmoid(double grade) {
@@ -25,14 +29,17 @@ double isPieceActive(ChessBoard* board) {
 
 }
 
-double evaluatePosition(ChessBoard* board) {
+int evaluatePosition(ChessBoard* board) {
 
-
-    struct MemoEvaluation* m = search(boardToKey(board));
-    if (m != NULL)
-        return m->grade;
     
-    double grade = 0;
+    struct MemoEvaluation* m = search(boardToKey(board));
+    if (m != NULL) {
+        //printf("Economizando! Nota: %d\n", m->grade);
+        return m->grade;
+    }
+
+    //double grade = 0;
+    int grade = 0;
     int sinal;
 
     //contando material
@@ -45,19 +52,19 @@ double evaluatePosition(ChessBoard* board) {
 
             switch (pieceType) {
             case PIECE_QUEEN:
-                grade += queenValue * sinal;
+                grade += QUEENVALUE * sinal;
                 break;
             case PIECE_BISHOP:
-                grade += bishopValue * sinal;
+                grade += BISHOPVALUE * sinal;
                 break;
             case PIECE_KNIGHT:
-                grade += horseValue * sinal;
+                grade += KNIGHTVALUE * sinal;
                 break;
             case PIECE_ROOK:
-                grade += rookValue * sinal;
+                grade += ROOKVALUE * sinal;
                 break;
             case PIECE_PAWN:
-                grade += pawnValue * sinal;
+                grade += PAWNVALUE * sinal;
                 break;
             default:
                 break;
@@ -67,10 +74,10 @@ double evaluatePosition(ChessBoard* board) {
     }
 
     // Counting squares of enemies attacks
-    double attackSum = 0;
+    int attackSum = 0;
     for (int i = 0; i < 64; i++) {
         if (board->move.attackSquares[i] == true) {
-            attackSum += squareValue;
+            attackSum += ATTACKSQUAREVALUE;
         }
     }
 
@@ -82,8 +89,8 @@ double evaluatePosition(ChessBoard* board) {
     }
 
     // E se a gente usar INT ao invés de double?
-    // 
-    grade = sigmoid(grade);
+    // E QUE TAL AGORA?
+
     insert(boardToKey(board), grade);
     return grade;
 }

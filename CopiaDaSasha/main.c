@@ -27,6 +27,7 @@ int main(void) {
 
     SetMousePosition(screenWidth / 2 + 1, screenHeight / 2 + 1);
 
+    initHashKeys();
     BoardInit(screenWidth, screenHeight);
 
 

@@ -155,7 +155,10 @@ bool BoardLoadFEN(ChessBoard* board, const char fen[BOARD_FEN_LENGTH]);
 // Carrega a FEN de um arquivo
 bool _BoardLoadFEN(ChessBoard* board);
 
+void BoardGetAsFEN(ChessBoard* board, char fenString[100]);
+
 char* boardMoveToFen(ChessBoard board, int from, int to);
+
 void BoardUnload(Board* board);
 
 void BoardResize(Board* board, int screenWidth, int screenHeight);

@@ -13,7 +13,95 @@
     * but i have any idea how to do that
 */
 
-unsigned int boardToKey(ChessBoard* board) {
+
+// Define the initial hash key
+unsigned long long int hashKey = 0ULL;
+
+// Hash table for pieces (piece-square table)
+unsigned long long int pieceKeys[12][64];
+
+// Hash table for en passant square
+unsigned long long int enPassantKeys[64];
+
+// Hash table for castling rights
+unsigned long long int castleKeys[16];
+
+// Initialize the hash tables
+void initHashKeys() {
+    int piece, square, castle;
+    for (piece = 0; piece < 12; ++piece) {
+        for (square = 0; square < 64; ++square) {
+            pieceKeys[piece][square] = rand();
+        }
+    }
+    for (square = 0; square < 64; ++square) {
+        enPassantKeys[square] = rand();
+    }
+    for (castle = 0; castle < 16; ++castle) {
+        castleKeys[castle] = rand();
+    }
+}
+
+// Compute hash key from FEN string
+unsigned long long int generateHashKey(char fen[]) {
+    unsigned long long int key = 0ULL;
+    int index = 0;
+    int square = 0;
+    int len = strlen(fen);
+
+    // Parse the FEN string and update the hash key
+    while (fen[index] != ' ') {
+        if (fen[index] >= '1' && fen[index] <= '8') {
+            square += (fen[index] - '0');
+        }
+        else if (fen[index] >= 'a' && fen[index] <= 'z') {
+            int piece = fen[index] - 'a';
+            square += piece;
+            key ^= pieceKeys[piece][square];
+        }
+        else if (fen[index] >= 'A' && fen[index] <= 'Z') {
+            int piece = fen[index] - 'A' + 6; // Convert uppercase to corresponding piece index
+            square += piece;
+            key ^= pieceKeys[piece][square];
+        }
+        else if (fen[index] == '/') {
+            // Skip to the next rank
+            square = (square + 8) % 64;
+        }
+        ++index;
+    }
+
+    // Process castling rights
+    ++index; // Skip space
+    while (fen[index] != ' ') {
+        key ^= castleKeys[fen[index] - 'K' + 2];
+        ++index;
+    }
+
+    // Process en passant square
+    ++index; // Skip space
+    if (fen[index] != '-') {
+        int file = fen[index] - 'a';
+        int rank = fen[index + 1] - '1';
+        int epSquare = rank * 8 + file;
+        key ^= enPassantKeys[epSquare];
+    }
+
+    return key;
+}
+
+
+
+
+unsigned long long int boardToKey(ChessBoard* board) {
+
+    char fenString[101];
+    BoardGetAsFEN(board, fenString);
+
+    return generateHashKey(fenString);
+    
+
+    /*
     unsigned int key = 0;
 
     for (int i = 0; i < 64; i++) {
@@ -21,22 +109,23 @@ unsigned int boardToKey(ChessBoard* board) {
         key += piece * (PieceRank(piece) * 10 + PieceFile(piece));
     }
     return key;
+    */
 }
 
 struct MemoEvaluation {
-    double grade;
-    unsigned int key;
+    int grade;
+    unsigned long long int key;
 };
 
 struct MemoEvaluation* hashArray[SIZE];
 struct MemoEvaluation* dummyItem;
 struct MemoEvaluation* item;
 
-int hashCode(int key) {
+int hashCode(unsigned long long int key) {
     return key % SIZE;
 }
 
-struct MemoEvaluation* search(int key) {
+struct MemoEvaluation* search(unsigned long long int key) {
     //get the hash 
     int hashIndex = hashCode(key);
 
@@ -56,7 +145,7 @@ struct MemoEvaluation* search(int key) {
     return NULL;
 }
 
-void insert(int key, double data) {
+void insert(unsigned long long int key, int data) {
 
     struct MemoEvaluation* item = (struct MemoEvaluation*)malloc(sizeof(struct MemoEvaluation));
     item->grade = data;
@@ -78,7 +167,7 @@ void insert(int key, double data) {
 }
 
 struct MemoEvaluation* deleteItem(struct MemoEvaluation* item) {
-    int key = item->key;
+    unsigned long long int key = item->key;
 
     //get the hash 
     int hashIndex = hashCode(key);
