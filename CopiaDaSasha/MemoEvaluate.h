@@ -114,6 +114,7 @@ unsigned long long int boardToKey(ChessBoard* board) {
 
 struct MemoEvaluation {
     int grade;
+    saxa_move bestMove;
     unsigned long long int key;
 };
 
@@ -145,10 +146,11 @@ struct MemoEvaluation* search(unsigned long long int key) {
     return NULL;
 }
 
-void insert(unsigned long long int key, int data) {
+void insert(unsigned long long int key, int data, saxa_move bestMove) {
 
     struct MemoEvaluation* item = (struct MemoEvaluation*)malloc(sizeof(struct MemoEvaluation));
     item->grade = data;
+    item->bestMove = bestMove;
     item->key = key;
 
     //get the hash 

@@ -821,7 +821,7 @@ void BoardUpdate(Board* board) {
                 threadMoveData.board = board->chessBoard;
                 threadMoveData.finished = false;
                 threadMoveData.depth = saxaDephtBoard;
-
+                //threadMoveData.depth = 4;
                 saxaMoveThreadId = CreateThread(NULL, 0, backtrackingMoveThreaded, &threadMoveData, 0, NULL);
 
                 if (saxaMoveThreadId != NULL) {

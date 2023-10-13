@@ -32,11 +32,7 @@ double isPieceActive(ChessBoard* board) {
 int evaluatePosition(ChessBoard* board) {
 
     
-    struct MemoEvaluation* m = search(boardToKey(board));
-    if (m != NULL) {
-        //printf("Economizando! Nota: %d\n", m->grade);
-        return m->grade;
-    }
+  
 
     //double grade = 0;
     int grade = 0;
@@ -91,6 +87,6 @@ int evaluatePosition(ChessBoard* board) {
     // E se a gente usar INT ao invés de double?
     // E QUE TAL AGORA?
 
-    insert(boardToKey(board), grade);
+    //insert(boardToKey(board), grade);
     return grade;
 }

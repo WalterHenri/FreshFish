@@ -35,12 +35,13 @@ void fenToBoardMove(char* move, ChessBoard board) {
 
 saxa_move backtrackingMove(ChessBoard board, int depth, int saxa_color) {
     //saxaDepth = depth;
-    return positionBestMove(board, depth, 0, 1);
+    return positionBestMove(board, depth, INT_MIN, INT_MAX);
 }
 
 HANDLE saxaMoveThreadId;
 //HANDLE saxaMoveTestThreadId;
 
+bool memoActive = false;
 
 DWORD WINAPI backtrackingMoveThreaded(void* data) {
 
@@ -53,12 +54,24 @@ DWORD WINAPI backtrackingMoveThreaded(void* data) {
     clock_t start, end;
     double cpu_time_used;
 
+    printf("*------------Calculation Start------------*\n");
+    
+    //memoActive = false;
+    //start = clock();
+    //moveData->move = positionBestMove(moveData->board, moveData->depth, INT_MIN, INT_MAX);
+    //end = clock();
+    //printf("BestMove (%d, %d) [%d] PruningSorting \n", moveData->move.from, moveData->move.to, moveData->move.grade);
+    //cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; // Calculate the CPU time used
+    //printf("CPU time used: %f seconds\n", cpu_time_used);
+
+    memoActive = true;
     start = clock();
     moveData->move = positionBestMove(moveData->board, moveData->depth, INT_MIN, INT_MAX);
     end = clock();
-    printf("Pruning Sorting Move(%d, %d) %d \n", moveData->move.from, moveData->move.to, moveData->move.grade);
+    printf("BestMove (%d, %d) [%d] PruningSortingMemorizing \n", moveData->move.from, moveData->move.to, moveData->move.grade);
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; // Calculate the CPU time used
     printf("CPU time used: %f seconds\n", cpu_time_used);
+    printf("\n");
 
   
     moveData->finished = true;
@@ -105,6 +118,8 @@ int partitionMoves(saxa_move arr[], int low, int high) {
 }
 
 
+
+
 saxa_move positionBestMove(ChessBoard board, int depth, int alpha, int beta) {
 
     saxa_move move = { 0,-1,-1, 0};
@@ -112,6 +127,15 @@ saxa_move positionBestMove(ChessBoard board, int depth, int alpha, int beta) {
     int moveCounter = 0;
 
     if (calculationAbort) return move;
+
+
+    if (memoActive) {
+        struct MemoEvaluation* m = search(boardToKey(&board));
+        if (m != NULL) {
+            //printf("Economizando! Nota: %d\n", m->grade);
+            return m->bestMove;
+        }
+    }
 
 
 
@@ -200,7 +224,13 @@ saxa_move positionBestMove(ChessBoard board, int depth, int alpha, int beta) {
         
     free(movesOrder);
 
-
+    if (memoActive) {
+        struct MemoEvaluation* m = search(boardToKey(&board));
+        if (m != NULL) {
+            insert(boardToKey(&board), move.grade, move);
+        }
+    }
+    
     return move;
 }
 
