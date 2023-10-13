@@ -38,6 +38,13 @@ typedef enum {
     CASTLING_QUEEN_SIDE,
 } CastlingType;
 
+typedef enum {
+    GAME_PLAYING,
+    GAME_DRAW,
+    GAME_WHITEWINS,
+    GAME_BLACKWINS
+} BoardGameState;
+
 typedef struct {
 
     bool isLogged;
@@ -62,6 +69,7 @@ typedef struct {
     } state;
 
     int kingSquare[2];
+    int pieceTypeNum[2][5];
 
     struct {
         /* Number of generated moves */
@@ -114,6 +122,9 @@ typedef struct {
 
     /* Can be used to inform if the board was recently updated */
     bool updated;
+
+    /* Game State (Playing, Draw, White Wins, Black Wins) */
+    int gameState;
 
     /* Board viewing perspective */
     bool viewAsWhite;
@@ -183,6 +194,10 @@ bool BoardKingInMate(ChessBoard* board, int kingColor);
 int BoardPerft(Board* board, int depth);
 
 void BoardUpdate(Board* board);
+
+void BoardPieceUpdate(Board* board);
+
+void BoardBotUpdate(Board* board);
 
 void BoardDraw(Board* board, int* menu);
 

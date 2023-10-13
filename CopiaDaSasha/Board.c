@@ -691,184 +691,64 @@ int BoardPerft(Board * board, int depth) {
 }
 
 void BoardUpdate(Board* board) {
-#define CLICK_TIME 0.15
-    static double clickTime = 0;
-    static bool clicked = false;
 
-    int rank;
-    int file;
-    int square;
+    // Game State
+    if(board->gameState == GAME_PLAYING){
+        if (BoardKingInMate(&board->chessBoard, PIECE_WHITE)) {
+            board->gameState = GAME_BLACKWINS;
+        }
+        else if (BoardKingInMate(&board->chessBoard, PIECE_BLACK)) {
+            board->gameState = GAME_WHITEWINS;
+        }
+        else if (boardInDraw(&board->chessBoard)) {
+            board->gameState = GAME_DRAW;
+        }
+    }
 
-    bool gameEnded = false;
 
-
+    // Inputs
     if (IsKeyPressed(KEY_SPACE)) {
         board->xRotating = true;
     }
 
     if (IsKeyPressed(KEY_RIGHT)) {
-        printf("Pra direita\n");
         board->prevFenIndex = min(board->prevFenIndex + 1, board->prevFenTotal-1);
         BoardLoadFEN(&board->displayChessBoard, board->prevFen[board->prevFenIndex]);
     }
 
     if (IsKeyPressed(KEY_LEFT)) {
-        printf("Pra esquerdaa\n");
         board->prevFenIndex = max(board->prevFenIndex - 1, 0);
         BoardLoadFEN(&board->displayChessBoard, board->prevFen[board->prevFenIndex]);
     }
 
 
+    // Updating Display Chess Board
     if (board->updated) {
         board->updated = false;
 
-        
         BoardGetAsFEN(&board->chessBoard, board->prevFen[board->prevFenTotal]);
         board->prevFenTotal++;
-
         board->prevFenIndex = board->prevFenTotal - 1;
 
         BoardLoadFEN(&board->displayChessBoard, board->prevFen[board->prevFenIndex]);
     }
 
 
-    /* Resize the board if screen size has changed */
-    if (IsWindowResized())
-        BoardResize(board, GetScreenWidth(), GetScreenHeight());
-
     // Promotion Menu
     if (board->promotion.active) {
-        if(!isSinglePlayer)
-            updatePromotionMenu(board);
-        else if (isSinglePlayer && board->chessBoard.state.whoMoves != saxaColor) {
-            updatePromotionMenu(board);
-        }
+        updatePromotionMenu(board);
     }
-    else if (BoardKingInMate(&board->chessBoard, board->chessBoard.state.whoMoves)) {
-        // Essa parte está sendo implementada em drawMateWindow
-        gameEnded = true;
-    }
-    else if (BoardKingInMate(&board->chessBoard, board->chessBoard.state.whoMoves == PIECE_WHITE? PIECE_BLACK : PIECE_WHITE )) {
-        // Essa parte está sendo implementada em drawMateWindow
-        gameEnded = true;
-    }
-    else if (boardInDraw(&board->chessBoard)) {
-        gameEnded = true;
-    }
-    else if (board->backButtonClicked) {
-        // Essa parte está sendo implementada em backButton
-    }
-    else if (!board->xRotating) {
-       
-        rank = (GetMouseY() - board->drawPosition.y) / board->squareLength;
-        file = (GetMouseX() - board->drawPosition.x) / board->squareLength;
-        if (!board->viewAsWhite) {
-            rank = 7 - rank;
-        }
-
-
-        square = PieceSquare(rank, file);
-
-        if (board->prevFenIndex == board->prevFenTotal - 1) {
-            if (rank >= 0 && rank <= 7 && file >= 0 && file <= 7) {
-                if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-                    clicked = true;
-
-                    if (!board->movingPiece.dragging
-                        && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
-                        && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves))
-                        board->movingPiece.position = square;
-
-
-                    if (clicked && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
-                        board->movingPiece.dragging = true;
-                    }
-
-
-                }
-                else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
-                    if ((board->movingPiece.dragging
-                        || (board->movingPiece.selecting
-                            && board->movingPiece.position != square))
-                        && clicked) {
-                        board->movingPiece.dragging = false;
-                        board->movingPiece.selecting = false;
-
-                        int pieceFrom = board->movingPiece.position;
-                        int pieceTo = square;
-
-                        if (board->chessBoard.state.whoMoves != saxaColor || isSinglePlayer == false) {
-                            if (board->chessBoard.move.list[pieceFrom][pieceTo] != MOVE_NONE) {
-                                if (board->chessBoard.move.list[pieceFrom][pieceTo] == MOVE_PAWN_PROMOTE) {
-                                    board->promotion.active = true;
-                                    board->promotion.from = pieceFrom;
-                                    board->promotion.to = pieceTo;
-                                }
-                                else {
-                                    board->updated = BoardMakeMove(&board->chessBoard, pieceFrom, pieceTo, 0, true);
-                                    board->positionGradeDepth = 0;
-                                    //testCalculationAbort = true;
-                                }
-                            }
-                        }
-                    }
-
-                    if (clicked && !board->movingPiece.selecting
-                        && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
-                        && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
-                        board->movingPiece.position = square;
-
-                        board->movingPiece.selecting = true;
-                        board->movingPiece.dragging = false;
-                    }
-
-                    clicked = false;
-                }
-            }
-            else {
-                board->movingPiece.dragging = false;
-                board->movingPiece.selecting = false;
-            }
+    else {
+        // Dragging Pieces and Making Moves
+        if (board->prevFenIndex == board->prevFenTotal - 1 && !board->xRotating && !board->backButtonClicked) {
+            BoardPieceUpdate(board);
         }
     }
 
 
-
-    if (isSinglePlayer && !gameEnded) {
-
-        if (board->chessBoard.state.whoMoves == saxaColor) {
-            if (saxaThinking) {
-                if (threadMoveData.finished) {
-                    WaitForSingleObject(saxaMoveThreadId, INFINITE);
-                    CloseHandle(saxaMoveThreadId);
-
-                    saxa_move Move = threadMoveData.move;
-
-                    if (Move.from != -1 && Move.to != -1) {
-                        board->updated = BoardMakeMove(&board->chessBoard, Move.from, Move.to, Move.extra, true);
-                        board->positionGradeDepth = 0;
-                        //testCalculationAbort = true;
-                    }
-                    else {
-                        printf("FreshFish is out of moves\n");
-                    }
-                    saxaThinking = false;
-                }
-            }
-            else {
-                threadMoveData.board = board->chessBoard;
-                threadMoveData.finished = false;
-                threadMoveData.depth = saxaDephtBoard;
-
-                saxaMoveThreadId = CreateThread(NULL, 0, backtrackingMoveThreaded, &threadMoveData, 0, NULL);
-
-                if (saxaMoveThreadId != NULL) {
-                    saxaThinking = true;
-                }
-            }
-
-        }
-        
+    // SINGLEPLAYER Bot
+    if (isSinglePlayer && board->gameState == GAME_PLAYING) {
+        BoardBotUpdate(board);
     }
 
     // Animando a troca de perspectiva girando o tabuleiro
@@ -885,7 +765,7 @@ void BoardUpdate(Board* board) {
         }
     }
 
-
+    // Animando o anel de selecionar
     if (board->movingPiece.dragging || board->movingPiece.selecting)
         board->movingPiece.ringRotation += 150 * GetFrameTime();
     else
@@ -893,8 +773,131 @@ void BoardUpdate(Board* board) {
 
     if (board->movingPiece.ringRotation > 360)
         board->movingPiece.ringRotation = 0;
-#undef CLICK_TIME
+
+
+    /* Resize the board if screen size has changed */
+    if (IsWindowResized()) {
+        BoardResize(board, GetScreenWidth(), GetScreenHeight());
+    }
 }
+
+void BoardBotUpdate(Board* board) {
+    if (board->chessBoard.state.whoMoves != saxaColor) return;
+
+    if (saxaThinking) {
+
+        if (!threadMoveData.finished) return;
+
+        WaitForSingleObject(saxaMoveThreadId, INFINITE);
+        CloseHandle(saxaMoveThreadId);
+
+        saxa_move Move = threadMoveData.move;
+
+        if (Move.from != -1 && Move.to != -1) {
+            board->updated = BoardMakeMove(&board->chessBoard, Move.from, Move.to, Move.extra, true);
+            board->positionGradeDepth = 0;
+            //testCalculationAbort = true;
+        }
+        else {
+            printf("FreshFish is out of moves\n");
+        }
+        saxaThinking = false;
+        
+    }
+    else {
+        threadMoveData.board = board->chessBoard;
+        threadMoveData.finished = false;
+        threadMoveData.depth = saxaDephtBoard;
+
+        saxaMoveThreadId = CreateThread(NULL, 0, backtrackingMoveThreaded, &threadMoveData, 0, NULL);
+
+        if (saxaMoveThreadId != NULL) {
+            saxaThinking = true;
+        }
+    }
+
+    
+}
+
+void BoardPieceUpdate(Board* board) {
+    int rank = (GetMouseY() - board->drawPosition.y) / board->squareLength;
+    int file = (GetMouseX() - board->drawPosition.x) / board->squareLength;
+    if (!board->viewAsWhite) {
+        rank = 7 - rank;
+    }
+
+
+    int square = PieceSquare(rank, file);
+    static bool clicked = false;
+
+    if (rank >= 0 && rank <= 7 && file >= 0 && file <= 7) {
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+            clicked = true;
+
+            if (!board->movingPiece.dragging
+                && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
+                && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves))
+                board->movingPiece.position = square;
+
+
+            if (clicked && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
+                board->movingPiece.dragging = true;
+            }
+
+
+        }
+        else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
+            if ((board->movingPiece.dragging
+                || (board->movingPiece.selecting
+                    && board->movingPiece.position != square))
+                && clicked) {
+                board->movingPiece.dragging = false;
+                board->movingPiece.selecting = false;
+
+                int pieceFrom = board->movingPiece.position;
+                int pieceTo = square;
+
+                if (board->chessBoard.state.whoMoves != saxaColor || isSinglePlayer == false) {
+                    if (board->chessBoard.move.list[pieceFrom][pieceTo] != MOVE_NONE) {
+                        if (board->chessBoard.move.list[pieceFrom][pieceTo] == MOVE_PAWN_PROMOTE) {
+                            board->promotion.active = true;
+                            board->promotion.from = pieceFrom;
+                            board->promotion.to = pieceTo;
+                        }
+                        else {
+                            board->updated = BoardMakeMove(&board->chessBoard, pieceFrom, pieceTo, 0, true);
+                            board->positionGradeDepth = 0;
+                            //testCalculationAbort = true;
+                        }
+                    }
+                }
+            }
+
+            if (clicked && !board->movingPiece.selecting
+                && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
+                && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
+                board->movingPiece.position = square;
+
+                board->movingPiece.selecting = true;
+                board->movingPiece.dragging = false;
+            }
+
+            clicked = false;
+        }
+    }
+    else {
+        board->movingPiece.dragging = false;
+        board->movingPiece.selecting = false;
+    }
+}
+        
+
+
+
+
+
+
+
 
 void drawBoardBackground(Board * board) {
     const float screenHeight = GetScreenHeight();
@@ -1044,14 +1047,13 @@ static void generateMoves(ChessBoard* board, bool onlyLegalMoves) {
     /* Reset the moves list, setting all bytes to zero */
     memset(&board->move, 0, sizeof(board->move));
 
-    int squareValue;
-    //int kingsSquareIndex = 0;
-    //int kingsSquare[2];
+    memset(&board->pieceTypeNum, 0, sizeof(board->pieceTypeNum));
 
-    //for (int square = 0; square < (64 + kingsSquareIndex); square++) {
+    int squareValue;
+
     for (int square = 0; square < 64; square++) {
         /* If it's generating for the board or "after king generation" */
-        //squareValue = square < 64 ? square : kingsSquare[square - 64];
+
         squareValue = square;
 
         /* If the piece in this square hasn't the color that's move this turn,
@@ -1067,27 +1069,21 @@ static void generateMoves(ChessBoard* board, bool onlyLegalMoves) {
         else
             continue;
 
-        switch (PieceGetType(board->squares[squareValue])) {
-            
-        //case PIECE_KING:
-        //    /* The king moves need to be generated after all other pieces move
-        //     * generation because of the king castling that must now if it's in
-        //     * check, this information only can be fetch after all move
-        //     * generation.
-        //     *
-        //     * Therefore, we defer the king move generation to end of the
-        //     * generation, this ensures the check informations was fetched.
-        //     */
-        //    if (square < 64)
-        //        kingsSquare[kingsSquareIndex++] = square;
-        //    else
-        //        generateKingMoves(board, squareValue, legalMoves);
+        int pieceType = PieceGetType(board->squares[squareValue]);
 
-        //    break;
-            
+        if (pieceType != PIECE_KING && pieceType != PIECE_NONE) {
+            board->pieceTypeNum[board->state.whoMoves / 8][pieceType - 2]++;
+        }
 
+        switch (pieceType) {
+            
         case PIECE_QUEEN:
+            
+            generateSlightMoves(board, squareValue, legalMoves);
+            break;
         case PIECE_BISHOP:
+            generateSlightMoves(board, squareValue, legalMoves);
+            break;
         case PIECE_ROOK:
             generateSlightMoves(board, squareValue, legalMoves);
             break;
@@ -1103,6 +1099,7 @@ static void generateMoves(ChessBoard* board, bool onlyLegalMoves) {
         default:
             break;
         }
+
     }
 
 
@@ -1115,6 +1112,7 @@ static void generateMoves(ChessBoard* board, bool onlyLegalMoves) {
 
         generateKingMoves(board, board->kingSquare[i], legalMoves);
     }
+
 }
 
 static void findKings(ChessBoard* board) {
@@ -1694,10 +1692,17 @@ static void drawDraggingPiece(Board board, ChessBoard chessBoard, Rectangle draw
 
 
 int boardInDraw(ChessBoard * board) {
-
+    // Regra dos 50 movimentos
+    if (board->state.halfmoves >= 50) return 1;
+   
+    // Stalemate
     if (board->move.count <= 0 && !(BoardKingInMate(board,PIECE_BLACK) || BoardKingInMate(board,PIECE_WHITE))) {
         return 1;
     }
+
+    // Material insuficiente
+    //if(board->pieceTypeNum[][])
+    // a implementar
     return 0;
 }
 
