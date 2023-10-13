@@ -120,6 +120,12 @@ typedef struct {
         int to;
     } promotion;
 
+
+    /* Position Editor */
+    struct {
+        int pieceType;
+    } editor;
+
     /* Can be used to inform if the board was recently updated */
     bool updated;
 
@@ -197,9 +203,13 @@ void BoardUpdate(Board* board);
 
 void BoardPieceUpdate(Board* board);
 
+void updatePieceButtons();
+
 void BoardBotUpdate(Board* board);
 
 void BoardDraw(Board* board, int* menu);
+
+void drawPieceButtons();
 
 #endif /* BOARD_HPP */
 

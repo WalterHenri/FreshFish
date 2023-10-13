@@ -68,7 +68,22 @@ DWORD WINAPI backtrackingMoveThreaded(void* data) {
     start = clock();
     moveData->move = positionBestMove(moveData->board, moveData->depth, INT_MIN, INT_MAX);
     end = clock();
-    printf("BestMove (%d, %d) [%d] PruningSortingMemorizing \n", moveData->move.from, moveData->move.to, moveData->move.grade);
+
+
+    if (moveData->move.grade > BEST_THING_POSSIBLE - moveData->depth) {
+        int mateIn = (moveData->move.grade - BEST_THING_POSSIBLE + moveData->depth);
+        printf("BestMove (%d, %d) [M%d] PruningSortingMemorizing \n", moveData->move.from, moveData->move.to, mateIn);
+    }
+    else if (moveData->move.grade < WORST_THING_POSSIBLE + moveData->depth) {
+        int mateIn = (WORST_THING_POSSIBLE + moveData->depth -moveData->move.grade);
+        printf("BestMove (%d, %d) [-M%d] PruningSortingMemorizing \n", moveData->move.from, moveData->move.to, mateIn);
+    }
+    else {
+        printf("BestMove (%d, %d) [%d] PruningSortingMemorizing \n", moveData->move.from, moveData->move.to, moveData->move.grade);
+    }
+        
+
+    
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC; // Calculate the CPU time used
     printf("CPU time used: %f seconds\n", cpu_time_used);
     printf("\n");

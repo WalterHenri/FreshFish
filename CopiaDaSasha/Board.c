@@ -60,7 +60,8 @@ static void backButton(Board* board, int* menu);
 /* Internal draw functions
  */
 static void drawSquare(Board board, Rectangle drawPosition, Color color);
-static void drawPiece(Board board, ChessBoard chessBoard, Rectangle drawPosition, int square, Color color);
+static void drawPiece(Board board, Rectangle drawPosition, int square, Color color, int piece, bool shrinked);
+static void drawSelectRing(Board board, int centerX, int centerY, Color color);
 static void drawRankAndFiles(Board board, Rectangle drawPosition, int square, Color color);
 static void drawMoves(Board board, ChessBoard chessBoard, Rectangle drawPosition, int square);
 static void drawDraggingPiece(Board board, ChessBoard chessBoard, Rectangle drawPosition);
@@ -109,13 +110,6 @@ void myitoa(int n, char s[]) {
 
 
 void updateSetPosition(Board* board) {
-#define CLICK_TIME 0.15
-    static double clickTime = 0;
-    static bool clicked = false;
-
-    int rank;
-    int file;
-    int square;
 
     /* Resize the board if screen size has changed */
     if (IsWindowResized())
@@ -125,68 +119,30 @@ void updateSetPosition(Board* board) {
         // Essa parte está sendo implementada em backButton
     }
     else {
-        rank = (GetMouseY() - board->drawPosition.y) / board->squareLength;
-        file = (GetMouseX() - board->drawPosition.x) / board->squareLength;
+        int rank = (GetMouseY() - board->drawPosition.y) / board->squareLength;
+        int file = (GetMouseX() - board->drawPosition.x) / board->squareLength;
+        if (!board->viewAsWhite) {
+            rank = 7 - rank;
+        }
 
-        square = PieceSquare(rank, file);
 
-
+        int square = PieceSquare(rank, file);
+        static bool clicked = false;
 
         if (rank >= 0 && rank <= 7 && file >= 0 && file <= 7) {
-            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-                clickTime = clickTime > 0 ? clickTime : GetTime();
-                clicked = true;
-
-                /* When the button down time is greater than the click time this
-                    * means that isn't a click anymore, therefore, start to drag
-                    * the piece.
-                    */
-                if (clicked && GetTime() - clickTime > CLICK_TIME
-                    && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
-                    board->movingPiece.dragging = true;
-                    board->movingPiece.selecting = false;
-
-                    clickTime = 0;
-                }
-
-                if (!board->movingPiece.dragging
-                    && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
-                    && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves))
-                    board->movingPiece.position = square;
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                board->chessBoard.squares[square] = board->editor.pieceType;
             }
-            else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
-                if ((board->movingPiece.dragging
-                    || (board->movingPiece.selecting
-                        && board->movingPiece.position != square))
-                    && clicked) {
-                    board->movingPiece.dragging = false;
-                    board->movingPiece.selecting = false;
-
-                    board->chessBoard.squares[square] = board->chessBoard.squares[board->movingPiece.position];
-
-                }
-
-                if (clicked && GetTime() - clickTime <= CLICK_TIME
-                    && !board->movingPiece.selecting
-                    && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
-                    && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
-                    board->movingPiece.position = square;
-
-                    board->movingPiece.selecting = true;
-                    board->movingPiece.dragging = false;
-                }
-
-                clicked = false;
-                clickTime = 0;
+            else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+                board->chessBoard.squares[square] = PIECE_NONE;
             }
+            char fenString[100];
+            BoardGetAsFEN(&board->chessBoard, fenString);
+            BoardLoadFEN(&board->displayChessBoard, fenString);
         }
-        else {
-            board->movingPiece.dragging = false;
-            board->movingPiece.selecting = false;
-        }
-
     }
 
+    /*
     if (board->movingPiece.dragging || board->movingPiece.selecting)
         board->movingPiece.ringRotation += 150 * GetFrameTime();
     else
@@ -194,7 +150,7 @@ void updateSetPosition(Board* board) {
 
     if (board->movingPiece.ringRotation > 360)
         board->movingPiece.ringRotation = 0;
-#undef CLICK_TIME
+    */
 }
 
 void showFen(Board* board) {
@@ -202,18 +158,21 @@ void showFen(Board* board) {
 }
 
 
-void setupPosition(int* menu) {
+void setupPosition(Board* board, int* menu) {
 
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
 
 
-    Board* board = (Board *) malloc(sizeof(Board));
+    //Board* board = (Board *) malloc(sizeof(Board));
     
-    BoardInit(screenWidth, screenHeight);
+    //BoardInit(screenWidth, screenHeight);
 
     //setup Position Mode is hard
     updateSetPosition(board);
+    //updatePieceButtons(board);
+
+    //drawPieceButtons(board);
 
     BoardDraw(board, menu);
 
@@ -223,6 +182,8 @@ void setupPosition(int* menu) {
     //buttonSettings();
     
 }
+
+
 
 
 Board BoardInit(int screenWidth, int screenHeight) {
@@ -637,7 +598,9 @@ bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWh
 }
 
 bool BoardKingInCheck(ChessBoard* board, int kingColor) { 
-    return (board->move.attackSquares[board->kingSquare[kingColor == PIECE_BLACK]]);
+
+    // board.kingSquare[WhiteKing square, BlackKing square]
+    return (board->move.attackSquares[board->kingSquare[kingColor != PIECE_WHITE]]) && board->state.whoMoves == kingColor;
 }
 
 bool BoardKingInMate(ChessBoard* board, int kingColor) {
@@ -781,6 +744,7 @@ void BoardUpdate(Board* board) {
     }
 }
 
+
 void BoardBotUpdate(Board* board) {
     if (board->chessBoard.state.whoMoves != saxaColor) return;
 
@@ -893,7 +857,9 @@ void BoardPieceUpdate(Board* board) {
         
 
 
-
+void updatePieceButtons(Board* board) {
+    
+}
 
 
 
@@ -1015,12 +981,30 @@ void BoardDraw(Board * board, int * menu) {
             opositeColor = board->squareBlackColor;
         }
 
+        int piece = board->displayChessBoard.squares[square];
+
+        bool selected = (board->movingPiece.selecting) && board->movingPiece.position == square;
+        bool dragged  = (board->movingPiece.dragging ) && board->movingPiece.position == square;
+        bool inCheck  = (PieceGetType(piece) == PIECE_KING) && BoardKingInCheck(&board->displayChessBoard, PieceGetColor(piece));
+        
+
         /* Draw the square */
         drawSquare(*board, squarePosition, color);
 
-        /* Draw the piece, if it's a valid piece and isn't dragging it
-         */
-        drawPiece(*board, board->displayChessBoard, squarePosition, square, opositeColor);
+        /* Draws king above red square if in check */
+        if (inCheck) {
+            DrawRectangleRec(squarePosition, RED);
+        }
+
+        /* Draw the piece, if it's a valid piece and isn't dragging it */
+        if (!dragged) {
+            drawPiece(*board, squarePosition, square, opositeColor, piece, selected);
+        }
+
+        /* Draws the Selection ring */
+        if (selected) {
+            drawSelectRing(*board, squarePosition.x + squarePosition.width/2, squarePosition.y + +squarePosition.height / 2, opositeColor);
+        }
 
         /* Draw the rank and the file on the board */
         drawRankAndFiles(*board, squarePosition, square, opositeColor);
@@ -1570,7 +1554,11 @@ static void drawSquare(Board board, Rectangle drawPosition, Color color) {
         DrawRectangleRec(drawPosition, color);
 }
 
-static void drawPiece(Board board, ChessBoard chessBoard, Rectangle drawPosition, int square, Color color) {
+static void drawPiece(Board board, Rectangle drawPosition, int square, Color color, int piece, bool shrinked) {
+
+    if (PieceHasType(piece, PIECE_NONE))
+        return;
+
     Rectangle spritePosition = {
         0, 0,
 
@@ -1578,30 +1566,22 @@ static void drawPiece(Board board, ChessBoard chessBoard, Rectangle drawPosition
         board.pieceSpriteSize.y
     };
 
-    if (PieceHasType(chessBoard.squares[square], PIECE_NONE))
-        return;
+    ///* Draw a red square if the king is in check */
 
-    /* Draw a red square if the king is in check */
-    if (PieceHasType(chessBoard.squares[square], PIECE_KING)
-        && BoardKingInCheck(&chessBoard, PieceGetColor(chessBoard.squares[square])))
-        DrawRectangleRec(drawPosition, RED);
 
     /* Draw the piece image if isn't dragging any piece or if is dragging
      * doesn't the piece is this square.
      */
-    if ((!board.movingPiece.dragging && !board.movingPiece.selecting)
-        || board.movingPiece.position != square) {
-        spritePosition.x = spritePosition.width * (PieceGetType(chessBoard.squares[square]) - 1);
-        spritePosition.y = spritePosition.height * PieceHasColor(chessBoard.squares[square], PIECE_BLACK);
 
-        DrawTexturePro(board.pieceSpriteSheet, spritePosition, drawPosition, (Vector2){ 0,0 }, 0, WHITE);
+    if (!shrinked) {
+        spritePosition.x = spritePosition.width * (PieceGetType(piece) - 1);
+        spritePosition.y = spritePosition.height * PieceHasColor(piece, PIECE_BLACK);
+
+        DrawTexturePro(board.pieceSpriteSheet, spritePosition, drawPosition, (Vector2) { 0, 0 }, 0, WHITE);
     }
-    else if (!board.movingPiece.dragging && board.movingPiece.selecting) {
+    else {
         drawPosition.x += drawPosition.width / 2.f;
         drawPosition.y += drawPosition.height / 2.f;
-
-        DrawRing((Vector2){ drawPosition.x, drawPosition.y }, board.squareLength * 0.4, board.squareLength * 0.5,
-            board.movingPiece.ringRotation, 360 + board.movingPiece.ringRotation, 6, color);
 
         drawPosition.width *= 0.7;
         drawPosition.height *= 0.7;
@@ -1609,21 +1589,20 @@ static void drawPiece(Board board, ChessBoard chessBoard, Rectangle drawPosition
         drawPosition.x -= drawPosition.width / 2.f;
         drawPosition.y -= drawPosition.height / 2.f;
 
-        spritePosition.x = spritePosition.width * (PieceGetType(chessBoard.squares[square]) - 1);
-        spritePosition.y = spritePosition.height * PieceHasColor(chessBoard.squares[square], PIECE_BLACK);
+        spritePosition.x = spritePosition.width * (PieceGetType(piece) - 1);
+        spritePosition.y = spritePosition.height * PieceHasColor(piece, PIECE_BLACK);
 
-        DrawTexturePro(board.pieceSpriteSheet, spritePosition, drawPosition,(Vector2){ 0,0 }, 0, WHITE);
+        DrawTexturePro(board.pieceSpriteSheet, spritePosition, drawPosition, (Vector2) { 0, 0 }, 0, WHITE);
         /* In here draw a replacement of the piece image that's dragging in this
          * case.
          */
     }
-    else {
-        drawPosition.x += drawPosition.width / 2.f;
-        drawPosition.y += drawPosition.height / 2.f;
+    
+}
 
-        DrawRing((Vector2){ drawPosition.x, drawPosition.y }, board.squareLength * 0.4, board.squareLength * 0.5,
-            board.movingPiece.ringRotation, 360 + board.movingPiece.ringRotation, 6, color);
-    }
+static void drawSelectRing(Board board, int centerX, int centerY, Color color) {
+    DrawRing((Vector2) { centerX, centerY}, board.squareLength * 0.4, board.squareLength * 0.5,
+        board.movingPiece.ringRotation, 360 + board.movingPiece.ringRotation, 6, color);
 }
 
 static void drawRankAndFiles(Board board, Rectangle drawPosition, int square, Color color) {
