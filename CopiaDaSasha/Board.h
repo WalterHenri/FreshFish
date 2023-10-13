@@ -112,23 +112,34 @@ typedef struct {
         int to;
     } promotion;
 
-    // 1 premove having (from, to and extra) values
-    bool preMoveStored;
-    int preMove[3];
+    /* Can be used to inform if the board was recently updated */
+    bool updated;
 
+    /* Board viewing perspective */
     bool viewAsWhite;
 
+    /* Board rotating variables */
     bool xRotating;
     float xAngle;
 
     float yScale;
     float xScale;
     
-
+    /* Evaluation bar variables */
     int positionGradeDepth;
     float positionGrade;
 
+    /* Actual game board */
     ChessBoard chessBoard;
+
+    /* Board that is shown on screen */
+    ChessBoard displayChessBoard;
+
+    /* Keeps track of the FEN of the previous positions */
+    char prevFen[100][100];
+    int  prevFenTotal;
+    int  prevFenIndex;
+
 } Board;
 
 void login(int* menuorboard);

@@ -14,6 +14,7 @@ int main(void) {
 
     Board board;
 
+
     InitWindow(0, 0, SCREEN_TITLE);
     SetWindowState(FLAG_WINDOW_RESIZABLE);
 
@@ -28,7 +29,7 @@ int main(void) {
     SetMousePosition(screenWidth / 2 + 1, screenHeight / 2 + 1);
 
     initHashKeys();
-    BoardInit(screenWidth, screenHeight);
+    board = BoardInit(screenWidth, screenHeight);
 
 
     menuInit();

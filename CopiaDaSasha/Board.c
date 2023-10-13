@@ -60,10 +60,10 @@ static void backButton(Board* board, int* menu);
 /* Internal draw functions
  */
 static void drawSquare(Board board, Rectangle drawPosition, Color color);
-static void drawPiece(Board board, Rectangle drawPosition, int square, Color color);
+static void drawPiece(Board board, ChessBoard chessBoard, Rectangle drawPosition, int square, Color color);
 static void drawRankAndFiles(Board board, Rectangle drawPosition, int square, Color color);
-static void drawMoves(Board board, Rectangle drawPosition, int square);
-static void drawDraggingPiece(Board board, Rectangle drawPosition);
+static void drawMoves(Board board, ChessBoard chessBoard, Rectangle drawPosition, int square);
+static void drawDraggingPiece(Board board, ChessBoard chessBoard, Rectangle drawPosition);
 static void drawMateWindow(Board* board, int* menu);
 static void drawPromotionMenu(Board board);
 
@@ -246,6 +246,16 @@ Board BoardInit(int screenWidth, int screenHeight) {
 
     BoardResize(&board, screenWidth, screenHeight);
     _BoardLoadFEN(&board.chessBoard);
+    
+    // Carregando o tabuleiro de Display
+    char fenString[100];
+    BoardGetAsFEN(&board.chessBoard, fenString);
+    for (int i = 0; i < 100; i++) {
+        board.prevFen[0][i] = fenString[i];
+    }
+
+    board.prevFenTotal++;
+    BoardLoadFEN(&board.displayChessBoard, fenString);
 
 
     return board;
@@ -258,10 +268,22 @@ void _BoardInit(Board* board) {
     memset(&board->movingPiece, 0, sizeof board->movingPiece);
     memset(&board->chessBoard.move, 0, sizeof board->chessBoard.move);
     memset(&board->chessBoard.state, 0, sizeof board->chessBoard.state);
-
-    
+    memset(&board->prevFen, 0, sizeof board->prevFen);
+    board->prevFenTotal = 0;
+    board->prevFenIndex = 0;
 
     BoardLoadFEN(&board->chessBoard, BOARD_FEN_DEFAULT);
+
+
+    memset(&board->displayChessBoard, 0, sizeof board->displayChessBoard);
+    char fenString[100];
+    BoardGetAsFEN(&board->chessBoard, fenString);
+    for (int i = 0; i < 100; i++) {
+        board->prevFen[0][i] = fenString[i];
+    }
+
+    board->prevFenTotal++;
+    BoardLoadFEN(&board->displayChessBoard, fenString);
 }
 
 char* boardMoveToFen(ChessBoard board, int from, int to) {
@@ -684,6 +706,31 @@ void BoardUpdate(Board* board) {
         board->xRotating = true;
     }
 
+    if (IsKeyPressed(KEY_RIGHT)) {
+        printf("Pra direita\n");
+        board->prevFenIndex = min(board->prevFenIndex + 1, board->prevFenTotal-1);
+        BoardLoadFEN(&board->displayChessBoard, board->prevFen[board->prevFenIndex]);
+    }
+
+    if (IsKeyPressed(KEY_LEFT)) {
+        printf("Pra esquerdaa\n");
+        board->prevFenIndex = max(board->prevFenIndex - 1, 0);
+        BoardLoadFEN(&board->displayChessBoard, board->prevFen[board->prevFenIndex]);
+    }
+
+
+    if (board->updated) {
+        board->updated = false;
+
+        
+        BoardGetAsFEN(&board->chessBoard, board->prevFen[board->prevFenTotal]);
+        board->prevFenTotal++;
+
+        board->prevFenIndex = board->prevFenTotal - 1;
+
+        BoardLoadFEN(&board->displayChessBoard, board->prevFen[board->prevFenIndex]);
+    }
+
 
     /* Resize the board if screen size has changed */
     if (IsWindowResized())
@@ -706,7 +753,7 @@ void BoardUpdate(Board* board) {
         gameEnded = true;
     }
     else if (boardInDraw(&board->chessBoard)) {
-       // gameEnded = true;
+        gameEnded = true;
     }
     else if (board->backButtonClicked) {
         // Essa parte está sendo implementada em backButton
@@ -722,83 +769,74 @@ void BoardUpdate(Board* board) {
 
         square = PieceSquare(rank, file);
 
+        if (board->prevFenIndex == board->prevFenTotal - 1) {
+            if (rank >= 0 && rank <= 7 && file >= 0 && file <= 7) {
+                if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+                    clicked = true;
 
-        if (rank >= 0 && rank <= 7 && file >= 0 && file <= 7) {
-            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-                clicked = true;
-
-                if (!board->movingPiece.dragging
-                    && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
-                    && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves))
-                    board->movingPiece.position = square;
+                    if (!board->movingPiece.dragging
+                        && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
+                        && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves))
+                        board->movingPiece.position = square;
 
 
-                if (clicked && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
-                    board->movingPiece.dragging = true;
+                    if (clicked && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
+                        board->movingPiece.dragging = true;
+                    }
+
+
                 }
+                else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
+                    if ((board->movingPiece.dragging
+                        || (board->movingPiece.selecting
+                            && board->movingPiece.position != square))
+                        && clicked) {
+                        board->movingPiece.dragging = false;
+                        board->movingPiece.selecting = false;
 
+                        int pieceFrom = board->movingPiece.position;
+                        int pieceTo = square;
 
-            }
-            else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
-                if ((board->movingPiece.dragging
-                    || (board->movingPiece.selecting
-                        && board->movingPiece.position != square))
-                    && clicked) {
-                    board->movingPiece.dragging = false;
-                    board->movingPiece.selecting = false;
-
-                    int pieceFrom = board->movingPiece.position;
-                    int pieceTo = square;
-
-                    if (board->chessBoard.state.whoMoves != saxaColor || isSinglePlayer == false) {
-                        if (board->chessBoard.move.list[pieceFrom][pieceTo] != MOVE_NONE) {
-                            if (board->chessBoard.move.list[pieceFrom][pieceTo] == MOVE_PAWN_PROMOTE) {
-                                board->promotion.active = true;
-                                board->promotion.from = pieceFrom;
-                                board->promotion.to = pieceTo;
-                            }
-                            else {
-                                BoardMakeMove(&board->chessBoard, pieceFrom, pieceTo, 0, true);
-                                board->positionGradeDepth = 0;
-                                //testCalculationAbort = true;
+                        if (board->chessBoard.state.whoMoves != saxaColor || isSinglePlayer == false) {
+                            if (board->chessBoard.move.list[pieceFrom][pieceTo] != MOVE_NONE) {
+                                if (board->chessBoard.move.list[pieceFrom][pieceTo] == MOVE_PAWN_PROMOTE) {
+                                    board->promotion.active = true;
+                                    board->promotion.from = pieceFrom;
+                                    board->promotion.to = pieceTo;
+                                }
+                                else {
+                                    board->updated = BoardMakeMove(&board->chessBoard, pieceFrom, pieceTo, 0, true);
+                                    board->positionGradeDepth = 0;
+                                    //testCalculationAbort = true;
+                                }
                             }
                         }
                     }
+
+                    if (clicked && !board->movingPiece.selecting
+                        && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
+                        && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
+                        board->movingPiece.position = square;
+
+                        board->movingPiece.selecting = true;
+                        board->movingPiece.dragging = false;
+                    }
+
+                    clicked = false;
                 }
-
-                if (clicked && !board->movingPiece.selecting
-                    && !PieceHasType(board->chessBoard.squares[square], PIECE_NONE)
-                    && PieceHasColor(board->chessBoard.squares[square], board->chessBoard.state.whoMoves)) {
-                    board->movingPiece.position = square;
-
-                    board->movingPiece.selecting = true;
-                    board->movingPiece.dragging = false;
-                }
-
-                clicked = false;
+            }
+            else {
+                board->movingPiece.dragging = false;
+                board->movingPiece.selecting = false;
             }
         }
-        else {
-            board->movingPiece.dragging = false;
-            board->movingPiece.selecting = false;
-        }
-        
     }
 
-    
+
+
     if (isSinglePlayer && !gameEnded) {
 
-
-        if (board->chessBoard.state.whoMoves != saxaColor) {
-            if (board->preMoveStored) {
-                BoardMakeMove(&board->chessBoard, board->preMove[0], board->preMove[1], board->preMove[2], true);
-                board->preMoveStored = false;
-                board->positionGradeDepth = 0;
-                //testCalculationAbort = true;
-            }
-        }
-        else {
-
+        if (board->chessBoard.state.whoMoves == saxaColor) {
             if (saxaThinking) {
                 if (threadMoveData.finished) {
                     WaitForSingleObject(saxaMoveThreadId, INFINITE);
@@ -807,7 +845,7 @@ void BoardUpdate(Board* board) {
                     saxa_move Move = threadMoveData.move;
 
                     if (Move.from != -1 && Move.to != -1) {
-                        BoardMakeMove(&board->chessBoard, Move.from, Move.to, Move.extra, true);
+                        board->updated = BoardMakeMove(&board->chessBoard, Move.from, Move.to, Move.extra, true);
                         board->positionGradeDepth = 0;
                         //testCalculationAbort = true;
                     }
@@ -821,22 +859,23 @@ void BoardUpdate(Board* board) {
                 threadMoveData.board = board->chessBoard;
                 threadMoveData.finished = false;
                 threadMoveData.depth = saxaDephtBoard;
-                //threadMoveData.depth = 4;
+
                 saxaMoveThreadId = CreateThread(NULL, 0, backtrackingMoveThreaded, &threadMoveData, 0, NULL);
 
                 if (saxaMoveThreadId != NULL) {
                     saxaThinking = true;
                 }
             }
-            
-           
+
         }
+        
     }
 
+    // Animando a troca de perspectiva girando o tabuleiro
     if (board->xRotating) {
-        board->xAngle += 500 * GetFrameTime();
-
-        board->yScale = cos(board->xAngle * (3.1415/ 180.f));
+        board->xAngle += 450 * GetFrameTime();
+        
+        board->yScale = cos(board->xAngle * DEG2RAD);
 
         if (board->xAngle >= 180) {
             board->xAngle = 0;
@@ -978,17 +1017,17 @@ void BoardDraw(Board * board, int * menu) {
 
         /* Draw the piece, if it's a valid piece and isn't dragging it
          */
-        drawPiece(*board, squarePosition, square, opositeColor);
+        drawPiece(*board, board->displayChessBoard, squarePosition, square, opositeColor);
 
         /* Draw the rank and the file on the board */
         drawRankAndFiles(*board, squarePosition, square, opositeColor);
 
         /* Draw the possible moves */
-        drawMoves(*board, squarePosition, square);
+        drawMoves(*board, board->displayChessBoard, squarePosition, square);
     }
 
     if (!board->promotion.active)
-        drawDraggingPiece(*board, squarePosition);
+        drawDraggingPiece(*board, board->displayChessBoard, squarePosition);
 
     drawMateWindow(board, menu);
     drawPromotionMenu(*board);
@@ -1388,7 +1427,7 @@ static void updatePromotionMenu(Board* board) {
         }
         else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT) && promotionSelected <= 4) {
 
-            BoardMakeMove(&board->chessBoard, board->promotion.from, board->promotion.to, promotion + 1, true);
+            board->updated = BoardMakeMove(&board->chessBoard, board->promotion.from, board->promotion.to, promotion + 1, true);
 
             board->promotion.active = false;
             board->positionGradeDepth = 0;
@@ -1533,7 +1572,7 @@ static void drawSquare(Board board, Rectangle drawPosition, Color color) {
         DrawRectangleRec(drawPosition, color);
 }
 
-static void drawPiece(Board board, Rectangle drawPosition, int square, Color color) {
+static void drawPiece(Board board, ChessBoard chessBoard, Rectangle drawPosition, int square, Color color) {
     Rectangle spritePosition = {
         0, 0,
 
@@ -1541,12 +1580,12 @@ static void drawPiece(Board board, Rectangle drawPosition, int square, Color col
         board.pieceSpriteSize.y
     };
 
-    if (PieceHasType(board.chessBoard.squares[square], PIECE_NONE))
+    if (PieceHasType(chessBoard.squares[square], PIECE_NONE))
         return;
 
     /* Draw a red square if the king is in check */
-    if (PieceHasType(board.chessBoard.squares[square], PIECE_KING)
-        && BoardKingInCheck(&board.chessBoard, PieceGetColor(board.chessBoard.squares[square])))
+    if (PieceHasType(chessBoard.squares[square], PIECE_KING)
+        && BoardKingInCheck(&chessBoard, PieceGetColor(chessBoard.squares[square])))
         DrawRectangleRec(drawPosition, RED);
 
     /* Draw the piece image if isn't dragging any piece or if is dragging
@@ -1554,8 +1593,8 @@ static void drawPiece(Board board, Rectangle drawPosition, int square, Color col
      */
     if ((!board.movingPiece.dragging && !board.movingPiece.selecting)
         || board.movingPiece.position != square) {
-        spritePosition.x = spritePosition.width * (PieceGetType(board.chessBoard.squares[square]) - 1);
-        spritePosition.y = spritePosition.height * PieceHasColor(board.chessBoard.squares[square], PIECE_BLACK);
+        spritePosition.x = spritePosition.width * (PieceGetType(chessBoard.squares[square]) - 1);
+        spritePosition.y = spritePosition.height * PieceHasColor(chessBoard.squares[square], PIECE_BLACK);
 
         DrawTexturePro(board.pieceSpriteSheet, spritePosition, drawPosition, (Vector2){ 0,0 }, 0, WHITE);
     }
@@ -1572,8 +1611,8 @@ static void drawPiece(Board board, Rectangle drawPosition, int square, Color col
         drawPosition.x -= drawPosition.width / 2.f;
         drawPosition.y -= drawPosition.height / 2.f;
 
-        spritePosition.x = spritePosition.width * (PieceGetType(board.chessBoard.squares[square]) - 1);
-        spritePosition.y = spritePosition.height * PieceHasColor(board.chessBoard.squares[square], PIECE_BLACK);
+        spritePosition.x = spritePosition.width * (PieceGetType(chessBoard.squares[square]) - 1);
+        spritePosition.y = spritePosition.height * PieceHasColor(chessBoard.squares[square], PIECE_BLACK);
 
         DrawTexturePro(board.pieceSpriteSheet, spritePosition, drawPosition,(Vector2){ 0,0 }, 0, WHITE);
         /* In here draw a replacement of the piece image that's dragging in this
@@ -1616,24 +1655,24 @@ static void drawRankAndFiles(Board board, Rectangle drawPosition, int square, Co
     }
 }
 
-static void drawMoves(Board board, Rectangle drawPosition, int square) {
+static void drawMoves(Board board, ChessBoard chessBoard, Rectangle drawPosition, int square) {
     static const Color color = { 128, 128, 128, 100 };
 
     if ((!board.movingPiece.dragging && !board.movingPiece.selecting)
-        || !board.chessBoard.move.list[board.movingPiece.position][square])
+        || !chessBoard.move.list[board.movingPiece.position][square])
         return;
 
     drawPosition.x += drawPosition.width / 2.f;
     drawPosition.y += drawPosition.height / 2.f;
 
-    if (PieceHasType(board.chessBoard.squares[square], PIECE_NONE))
+    if (PieceHasType(chessBoard.squares[square], PIECE_NONE))
         DrawCircle(drawPosition.x, drawPosition.y, drawPosition.width / 6.f, color);
     else
         DrawRing((Vector2){ drawPosition.x, drawPosition.y }, board.squareLength * 0.5,
             board.squareLength * 0.4, 0, 360, 0, color);
 }
 
-static void drawDraggingPiece(Board board, Rectangle drawPosition) {
+static void drawDraggingPiece(Board board, ChessBoard chessBoard, Rectangle drawPosition) {
     Rectangle spritePosition = {
         0, 0,
 
@@ -1644,8 +1683,8 @@ static void drawDraggingPiece(Board board, Rectangle drawPosition) {
     if (!board.movingPiece.dragging)
         return;
 
-    spritePosition.x = spritePosition.width * (PieceGetType(board.chessBoard.squares[board.movingPiece.position]) - 1);
-    spritePosition.y = spritePosition.height * PieceHasColor(board.chessBoard.squares[board.movingPiece.position], PIECE_BLACK);
+    spritePosition.x = spritePosition.width * (PieceGetType(chessBoard.squares[board.movingPiece.position]) - 1);
+    spritePosition.y = spritePosition.height * PieceHasColor(chessBoard.squares[board.movingPiece.position], PIECE_BLACK);
 
     drawPosition.x = GetMouseX() - board.squareLength / 2.f;
     drawPosition.y = GetMouseY() - board.squareLength / 2.f;
