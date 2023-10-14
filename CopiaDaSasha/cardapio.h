@@ -236,6 +236,12 @@ void gamemode(int* menuorboard) {
 
     DrawTextEx(optionsFont, "RETROCEDER", positionSair, fontSizeOption, spacing, WHITE);
 
+    Vector2 positionSetup;
+    positionSetup.x = screenwidth / 2 - MeasureTextEx(optionsFont, "MONTAR TABULEIRO", fontSizeOption, 2).x / 2;
+    positionSetup.y = positionSair.y + (MeasureTextEx(optionsFont, "RETROCERDER", fontSizeOption, 2).y);
+
+    DrawTextEx(optionsFont, "MONTAR TABULEIRO", positionSetup, fontSizeOption, spacing, WHITE);
+
 
     if (checkTextColision(mousePoint, positionJogar, optionsFont, "DOIS JOGADORES", fontSizeOption, spacing)) {
         DrawTextEx(optionsFont, "DOIS JOGADORES", positionJogar, fontSizeOption, spacing, YELLOW);
@@ -258,6 +264,14 @@ void gamemode(int* menuorboard) {
         if (IsMouseButtonPressed(0))
             *menuorboard = 0;
     }
+
+    if (checkTextColision(mousePoint, positionSetup, optionsFont, "MONTAR TABULEIRO", fontSizeOption, spacing)) {
+        DrawTextEx(optionsFont, "MONTAR TABULEIRO", positionSetup, fontSizeOption, spacing, YELLOW);
+        if (IsMouseButtonPressed(0)) {
+            *menuorboard = 7;
+        }
+    }
+
 
 
     EndDrawing();

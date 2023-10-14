@@ -60,8 +60,8 @@ static void backButton(Board* board, int* menu);
 /* Internal draw functions
  */
 static void drawSquare(Board board, Rectangle drawPosition, Color color);
-static void drawPiece(Board board, Rectangle drawPosition, int square, Color color, int piece, bool shrinked);
-static void drawSelectRing(Board board, int centerX, int centerY, Color color);
+static void drawPiece(Board board, Rectangle drawPosition, Color color, int piece, bool shrinked);
+static void drawSelectRing(Board board, int centerX, int centerY, float size, Color color);
 static void drawRankAndFiles(Board board, Rectangle drawPosition, int square, Color color);
 static void drawMoves(Board board, ChessBoard chessBoard, Rectangle drawPosition, int square);
 static void drawDraggingPiece(Board board, ChessBoard chessBoard, Rectangle drawPosition);
@@ -119,30 +119,35 @@ void updateSetPosition(Board* board) {
         // Essa parte está sendo implementada em backButton
     }
     else {
-        int rank = (GetMouseY() - board->drawPosition.y) / board->squareLength;
-        int file = (GetMouseX() - board->drawPosition.x) / board->squareLength;
-        if (!board->viewAsWhite) {
-            rank = 7 - rank;
-        }
 
+        if (GetMouseX() >= board->drawPosition.x && GetMouseX() < board->drawPosition.x + board->squareLength * 8 &&
+            GetMouseY() >= board->drawPosition.y && GetMouseY() < board->drawPosition.y + board->squareLength * 8) {
 
-        int square = PieceSquare(rank, file);
-        static bool clicked = false;
-
-        if (rank >= 0 && rank <= 7 && file >= 0 && file <= 7) {
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                board->chessBoard.squares[square] = board->editor.pieceType;
+            int rank = (GetMouseY() - board->drawPosition.y) / board->squareLength;
+            int file = (GetMouseX() - board->drawPosition.x) / board->squareLength;
+            if (!board->viewAsWhite) {
+                rank = 7 - rank;
             }
-            else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-                board->chessBoard.squares[square] = PIECE_NONE;
+
+
+            int square = PieceSquare(rank, file);
+            static bool clicked = false;
+
+            if (rank >= 0 && rank <= 7 && file >= 0 && file <= 7) {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                    board->chessBoard.squares[square] = board->editor.pieceType;
+                }
+                else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+                    board->chessBoard.squares[square] = PIECE_NONE;
+                }
+                char fenString[100];
+                BoardGetAsFEN(&board->chessBoard, fenString);
+                BoardLoadFEN(&board->displayChessBoard, fenString);
             }
-            char fenString[100];
-            BoardGetAsFEN(&board->chessBoard, fenString);
-            BoardLoadFEN(&board->displayChessBoard, fenString);
         }
     }
 
-    /*
+    
     if (board->movingPiece.dragging || board->movingPiece.selecting)
         board->movingPiece.ringRotation += 150 * GetFrameTime();
     else
@@ -150,7 +155,7 @@ void updateSetPosition(Board* board) {
 
     if (board->movingPiece.ringRotation > 360)
         board->movingPiece.ringRotation = 0;
-    */
+    
 }
 
 void showFen(Board* board) {
@@ -169,12 +174,20 @@ void setupPosition(Board* board, int* menu) {
     //BoardInit(screenWidth, screenHeight);
 
     //setup Position Mode is hard
+    updatePieceButtons(board);
     updateSetPosition(board);
-    //updatePieceButtons(board);
+    
 
-    //drawPieceButtons(board);
+    BeginDrawing();
+    ClearBackground(BLACK);
 
+    DrawFPS(0, 0);
+
+   
     BoardDraw(board, menu);
+    drawPieceButtons(board);
+
+    EndDrawing();
 
     //quanta coisa!
     //buttonSaveFen();
@@ -223,26 +236,32 @@ Board BoardInit(int screenWidth, int screenHeight) {
 }
 
 void _BoardInit(Board* board) {
+    
+    // Board Reset
     board->backButtonClicked = false;
     board->viewAsWhite = true;
-
+    memset(&board->promotion, 0, sizeof board->promotion);
+    board->xRotating = false;
+    board->xAngle = 0;
+    board->xScale = 1;
+    board->yScale = 1;
     memset(&board->movingPiece, 0, sizeof board->movingPiece);
+    
+    // Chess Board Reset
     memset(&board->chessBoard.move, 0, sizeof board->chessBoard.move);
     memset(&board->chessBoard.state, 0, sizeof board->chessBoard.state);
+    BoardLoadFEN(&board->chessBoard, BOARD_FEN_DEFAULT);
+
+    // Display Board Reset
+    memset(&board->displayChessBoard, 0, sizeof board->displayChessBoard); 
     memset(&board->prevFen, 0, sizeof board->prevFen);
     board->prevFenTotal = 0;
     board->prevFenIndex = 0;
-
-    BoardLoadFEN(&board->chessBoard, BOARD_FEN_DEFAULT);
-
-
-    memset(&board->displayChessBoard, 0, sizeof board->displayChessBoard);
     char fenString[100];
     BoardGetAsFEN(&board->chessBoard, fenString);
     for (int i = 0; i < 100; i++) {
         board->prevFen[0][i] = fenString[i];
     }
-
     board->prevFenTotal++;
     BoardLoadFEN(&board->displayChessBoard, fenString);
 }
@@ -685,18 +704,6 @@ void BoardUpdate(Board* board) {
     }
 
 
-    // Updating Display Chess Board
-    if (board->updated) {
-        board->updated = false;
-
-        BoardGetAsFEN(&board->chessBoard, board->prevFen[board->prevFenTotal]);
-        board->prevFenTotal++;
-        board->prevFenIndex = board->prevFenTotal - 1;
-
-        BoardLoadFEN(&board->displayChessBoard, board->prevFen[board->prevFenIndex]);
-    }
-
-
     // Promotion Menu
     if (board->promotion.active) {
         updatePromotionMenu(board);
@@ -713,6 +720,20 @@ void BoardUpdate(Board* board) {
     if (isSinglePlayer && board->gameState == GAME_PLAYING) {
         BoardBotUpdate(board);
     }
+
+
+    // Updating Display Chess Board
+    if (board->updated) {
+        board->updated = false;
+
+        BoardGetAsFEN(&board->chessBoard, board->prevFen[board->prevFenTotal]);
+        board->prevFenTotal++;
+        board->prevFenIndex = board->prevFenTotal - 1;
+
+        BoardLoadFEN(&board->displayChessBoard, board->prevFen[board->prevFenIndex]);
+    }
+
+
 
     // Animando a troca de perspectiva girando o tabuleiro
     if (board->xRotating) {
@@ -772,7 +793,7 @@ void BoardBotUpdate(Board* board) {
         threadMoveData.board = board->chessBoard;
         threadMoveData.finished = false;
         threadMoveData.depth = saxaDephtBoard;
-
+        //threadMoveData.depth = 5;
         saxaMoveThreadId = CreateThread(NULL, 0, backtrackingMoveThreaded, &threadMoveData, 0, NULL);
 
         if (saxaMoveThreadId != NULL) {
@@ -859,6 +880,57 @@ void BoardPieceUpdate(Board* board) {
 
 void updatePieceButtons(Board* board) {
     
+
+    float sqrHei = board->squareLength * 8 / 6;
+
+    Rectangle square = {
+        board->drawPosition.x ,
+        board->drawPosition.y,
+        sqrHei,
+        sqrHei
+    };
+
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 6; j++) {
+                square.x = board->drawPosition.x - sqrHei * 2 + square.width * i;
+                square.y = board->drawPosition.y + square.height * j;
+
+                if (CheckCollisionPointRec(GetMousePosition(), square)) {
+                    board->editor.pieceType = (j + 1) + (i + 1) * PIECE_BLACK;
+                }
+            }
+        }
+    }
+}
+
+void drawPieceButtons(Board* board) {
+    float sqrHei = board->squareLength * 8 / 6;
+
+    Rectangle square = {
+        board->drawPosition.x ,
+        board->drawPosition.y,
+        sqrHei,
+        sqrHei
+    };
+
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 6; j++) {
+            square.x = board->drawPosition.x - sqrHei * 2 + square.width * i;
+            square.y = board->drawPosition.y + square.height * j;
+
+            int piece = (j + 1) + (i + 1) * PIECE_BLACK;
+
+
+
+            drawSquare(*board, square, (i+j)%2 ? WHITE : GRAY);
+            drawPiece(*board, square, WHITE, piece, false);
+
+            if (CheckCollisionPointRec(GetMousePosition(), square)) {
+                drawSelectRing(*board, square.x + square.width / 2, square.y + square.height / 2, square.width * 0.5, (i + j) % 2 ? GRAY : WHITE);
+            }
+        }
+    }
 }
 
 
@@ -882,7 +954,7 @@ void drawBoardBackground(Board * board) {
 
     DrawRectangleRec(bgInformation, bgInformationColor);
     DrawTexture(bgLeft,0,0,WHITE);
-    /*
+    
     char fenString[100];
     BoardGetAsFEN(&board->chessBoard, fenString);
 
@@ -895,7 +967,7 @@ void drawBoardBackground(Board * board) {
     char hmovesString[100];
     sprintf(hmovesString, "%d", board->chessBoard.state.halfmoves);
     DrawText(hmovesString, bgInformation.x, bgInformation.y + 40, 10, WHITE);
-    */
+    
 }
 
 void drawEvaluationBar(Board* board) {
@@ -998,12 +1070,12 @@ void BoardDraw(Board * board, int * menu) {
 
         /* Draw the piece, if it's a valid piece and isn't dragging it */
         if (!dragged) {
-            drawPiece(*board, squarePosition, square, opositeColor, piece, selected);
+            drawPiece(*board, squarePosition, opositeColor, piece, selected);
         }
 
         /* Draws the Selection ring */
         if (selected) {
-            drawSelectRing(*board, squarePosition.x + squarePosition.width/2, squarePosition.y + +squarePosition.height / 2, opositeColor);
+            drawSelectRing(*board, squarePosition.x + squarePosition.width/2, squarePosition.y +squarePosition.height / 2, squarePosition.width*0.4, opositeColor);
         }
 
         /* Draw the rank and the file on the board */
@@ -1554,7 +1626,7 @@ static void drawSquare(Board board, Rectangle drawPosition, Color color) {
         DrawRectangleRec(drawPosition, color);
 }
 
-static void drawPiece(Board board, Rectangle drawPosition, int square, Color color, int piece, bool shrinked) {
+static void drawPiece(Board board, Rectangle drawPosition, Color color, int piece, bool shrinked) {
 
     if (PieceHasType(piece, PIECE_NONE))
         return;
@@ -1600,8 +1672,8 @@ static void drawPiece(Board board, Rectangle drawPosition, int square, Color col
     
 }
 
-static void drawSelectRing(Board board, int centerX, int centerY, Color color) {
-    DrawRing((Vector2) { centerX, centerY}, board.squareLength * 0.4, board.squareLength * 0.5,
+static void drawSelectRing(Board board, int centerX, int centerY, float size, Color color) {
+    DrawRing((Vector2) { centerX, centerY}, size, size,
         board.movingPiece.ringRotation, 360 + board.movingPiece.ringRotation, 6, color);
 }
 

@@ -9,7 +9,7 @@
 #include "Piece.h"
 
 int saxaDepth; /// warning!!!
-int saxaColor = PIECE_BLACK;
+int saxaColor = PIECE_WHITE;
 
 typedef struct {
     //double grade;

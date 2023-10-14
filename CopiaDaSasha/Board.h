@@ -203,13 +203,17 @@ void BoardUpdate(Board* board);
 
 void BoardPieceUpdate(Board* board);
 
-void updatePieceButtons();
+void updatePieceButtons(Board* board);
 
 void BoardBotUpdate(Board* board);
 
 void BoardDraw(Board* board, int* menu);
 
-void drawPieceButtons();
+void drawPieceButtons(Board* board);
+
+void setupPosition(Board* board, int* menu);
+
+
 
 #endif /* BOARD_HPP */
 

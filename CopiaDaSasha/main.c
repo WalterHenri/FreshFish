@@ -73,6 +73,9 @@ int main(void) {
             GameBoard(&menuorboard);
             break;
 
+        case 7:
+            setupPosition(&board, &menuorboard);
+            break;
         }
     }
     BoardUnload(&board);

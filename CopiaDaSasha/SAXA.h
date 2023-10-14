@@ -70,11 +70,11 @@ DWORD WINAPI backtrackingMoveThreaded(void* data) {
     end = clock();
 
 
-    if (moveData->move.grade > BEST_THING_POSSIBLE - moveData->depth) {
+    if (moveData->move.grade >= BEST_THING_POSSIBLE - moveData->depth) {
         int mateIn = (moveData->move.grade - BEST_THING_POSSIBLE + moveData->depth);
         printf("BestMove (%d, %d) [M%d] PruningSortingMemorizing \n", moveData->move.from, moveData->move.to, mateIn);
     }
-    else if (moveData->move.grade < WORST_THING_POSSIBLE + moveData->depth) {
+    else if (moveData->move.grade <= WORST_THING_POSSIBLE + moveData->depth) {
         int mateIn = (WORST_THING_POSSIBLE + moveData->depth -moveData->move.grade);
         printf("BestMove (%d, %d) [-M%d] PruningSortingMemorizing \n", moveData->move.from, moveData->move.to, mateIn);
     }
