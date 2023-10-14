@@ -3,6 +3,7 @@
 #include "raylib.h"
 
 #include "Board.h"
+
 #include <stdio.h>
 
 #define SCREEN_TITLE  "FreshFish"
@@ -31,6 +32,7 @@ int main(void) {
     initHashKeys();
     board = BoardInit(screenWidth, screenHeight);
 
+    
 
     menuInit();
     SetTargetFPS(60);

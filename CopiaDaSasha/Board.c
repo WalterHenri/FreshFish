@@ -23,17 +23,8 @@ int saxaDephtBoard;
 int quadros;
 bool isSinglePlayer;
 
-Texture2D background;
-Texture2D background2;
-Texture2D logo;
-Texture2D pecas;
-Texture2D playHoverText;
-Texture2D optionHoverText;
-Texture2D sairHoverText;
-Texture2D bgLeft;
+#include "Recursos.h"
 
-Font titleFont;
-Font optionsFont;
 
 #include "cardapio.h"
 
@@ -68,19 +59,7 @@ static void drawDraggingPiece(Board board, ChessBoard chessBoard, Rectangle draw
 static void drawMateWindow(Board* board, int* menu);
 static void drawPromotionMenu(Board board);
 
-void menuInit() {
-    //upload das imagens usadas
 
-    logo = LoadTexture("./assets/FreshFishLogo.png");
-    pecas = LoadTexture("./assets/chess_pieces.png");
-    background = LoadTexture("./assets/initialScreen.png");
-    background2 = LoadTexture("./assets/menuScreen.png");
-    titleFont = LoadFontEx("./Fonts/HipotesiS_Tittle.ttf", 256, 0, 0);
-    optionsFont = LoadFontEx("./Fonts/LemonMilk_Content.otf",256,0,0);
-    playHoverText = LoadTexture("./assets/chess-game.png");
-    optionHoverText = LoadTexture("./assets/gear.png");
-    bgLeft = LoadTexture("./assets/bg.png");
-}
 
 void reverse(char s[]) {
     int i, j;
@@ -672,6 +651,46 @@ int BoardPerft(Board * board, int depth) {
     return nodes;
 }
 
+void BoardMakeMoveHandler(Board* board, int from, int to, int promotion) {
+    int moveType = board->chessBoard.move.list[from][to];
+    bool sucesso = BoardMakeMove(&board->chessBoard, from, to, 0, true);
+
+    if (sucesso) {
+        board->updated = true;
+
+        // Tocar som?
+        printf("Movimento %d\n", moveType);
+        switch (moveType) {
+        case MOVE_NONE:
+            PlaySound(sndCapture);
+            
+            break;
+        case MOVE_NORMAL:
+            PlaySound(sndCapture);
+           
+            break;
+        case MOVE_PAWN_TWO_FORWARD:
+            PlaySound(sndCapture);
+           
+            break;
+        case  MOVE_PAWN_EN_PASSANT:
+            PlaySound(sndCapture);
+            break;
+        case MOVE_PAWN_PROMOTE:
+            PlaySound(sndCapture);
+            break;
+        case MOVE_CASTLING_KING:
+            PlaySound(sndCapture);
+            break;
+        case MOVE_CASTLING_QUEEN:
+            PlaySound(sndCapture);
+            break;
+        }
+    }
+    
+}
+
+
 void BoardUpdate(Board* board) {
 
     // Game State
@@ -779,9 +798,7 @@ void BoardBotUpdate(Board* board) {
         saxa_move Move = threadMoveData.move;
 
         if (Move.from != -1 && Move.to != -1) {
-            board->updated = BoardMakeMove(&board->chessBoard, Move.from, Move.to, Move.extra, true);
-            board->positionGradeDepth = 0;
-            //testCalculationAbort = true;
+            BoardMakeMoveHandler(board, Move.from, Move.to, Move.extra); 
         }
         else {
             printf("FreshFish is out of moves\n");
@@ -850,9 +867,7 @@ void BoardPieceUpdate(Board* board) {
                             board->promotion.to = pieceTo;
                         }
                         else {
-                            board->updated = BoardMakeMove(&board->chessBoard, pieceFrom, pieceTo, 0, true);
-                            board->positionGradeDepth = 0;
-                            //testCalculationAbort = true;
+                            BoardMakeMoveHandler(board, pieceFrom, pieceTo, 0);
                         }
                     }
                 }
@@ -1480,12 +1495,9 @@ static void updatePromotionMenu(Board* board) {
             promotionSelected = promotion;
         }
         else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT) && promotionSelected <= 4) {
-
-            board->updated = BoardMakeMove(&board->chessBoard, board->promotion.from, board->promotion.to, promotion + 1, true);
-
+            BoardMakeMoveHandler(board, board->promotion.from, board->promotion.to, promotion + 1);
             board->promotion.active = false;
-            board->positionGradeDepth = 0;
-            //testCalculationAbort = true;
+            
 
             promotionSelected = 5;            
             break;

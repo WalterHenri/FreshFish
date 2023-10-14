@@ -201,6 +201,8 @@ int BoardPerft(Board* board, int depth);
 
 void BoardUpdate(Board* board);
 
+void BoardMakeMoveHandler(Board* board, int from, int to, int promotion);
+
 void BoardPieceUpdate(Board* board);
 
 void updatePieceButtons(Board* board);

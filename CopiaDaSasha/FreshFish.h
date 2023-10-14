@@ -38,7 +38,9 @@ saxa_move positionBestMoveTest(ChessBoard board, int depth, int alpha, int beta)
 int moveGrade(ChessBoard board, saxa_move tryMove, int depth, int alpha, int beta);
 int moveGradeTest(ChessBoard board, saxa_move tryMove, int depth, int alpha, int beta);
 
+//#define PlaySound RaylibPlaySound
 
+#define WIN32_LEAN_AND_MEAN
 #if defined(_WIN32)           
 #define NOGDI             // All GDI defines and routines
 #define NOUSER            // All USER defines and routines
@@ -47,12 +49,14 @@ int moveGradeTest(ChessBoard board, saxa_move tryMove, int depth, int alpha, int
 #include <windows.h> // or any library that uses Windows.h
 
 
+
+
 #if defined(_WIN32)           // raylib uses these names as function parameters
 #undef near
 #undef far
 #endif
 
-
+//#define PlaySound PlaySoundWindows
 
 struct ThreadMoveData {
     ChessBoard board;
