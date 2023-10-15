@@ -39,12 +39,12 @@ DWORD WINAPI backtrackingMoveThreaded(void* data) {
     end = clock();
 
 
-    if (moveData->move.grade >= BEST_THING_POSSIBLE - moveData->depth) {
-        int mateIn = (moveData->move.grade - BEST_THING_POSSIBLE + moveData->depth);
+    if (moveData->move.grade >= BEST_THING_POSSIBLE) {
+        int mateIn = moveData->depth - (moveData->move.grade - BEST_THING_POSSIBLE);
         printf("BestMove (%d, %d) [M%d] PruningSortingMemorizing \n", moveData->move.from, moveData->move.to, mateIn);
     }
-    else if (moveData->move.grade <= WORST_THING_POSSIBLE + moveData->depth) {
-        int mateIn = (WORST_THING_POSSIBLE + moveData->depth -moveData->move.grade);
+    else if (moveData->move.grade <= WORST_THING_POSSIBLE) {
+        int mateIn = moveData->depth - (WORST_THING_POSSIBLE - moveData->move.grade);
         printf("BestMove (%d, %d) [-M%d] PruningSortingMemorizing \n", moveData->move.from, moveData->move.to, mateIn);
     }
     else {
@@ -101,7 +101,7 @@ saxa_move positionBestMove(ChessBoard board, int depth, int alpha, int beta) {
 
     if (calculationAbort) return move;
 
-
+    
     if (memoActive) {
         struct MemoEvaluation* m = search(boardToKey(&board));
         if (m != NULL) {
@@ -109,6 +109,7 @@ saxa_move positionBestMove(ChessBoard board, int depth, int alpha, int beta) {
             return m->bestMove;
         }
     }
+    
 
 
 
@@ -138,9 +139,10 @@ saxa_move positionBestMove(ChessBoard board, int depth, int alpha, int beta) {
 
         }
     }
-        
+     
 
-    
+
+
     // Ordem decrescente
     quickSortMoves(movesOrder, 0, moveCounter - 1);
 
@@ -177,6 +179,7 @@ saxa_move positionBestMove(ChessBoard board, int depth, int alpha, int beta) {
                 move = tryMove;
             }
 
+
             alpha = max(alpha, tryMove.grade);
             if (beta <= alpha) {
                 break;
@@ -187,6 +190,7 @@ saxa_move positionBestMove(ChessBoard board, int depth, int alpha, int beta) {
             if (tryMove.grade < move.grade) {
                 move = tryMove;
             }
+
 
             beta = min(beta, tryMove.grade);
             if (beta <= alpha) {
@@ -204,6 +208,7 @@ saxa_move positionBestMove(ChessBoard board, int depth, int alpha, int beta) {
         }
     }
     
+   
     return move;
 }
 
@@ -222,10 +227,10 @@ int moveGrade(ChessBoard board, saxa_move tryMove, int depth, int alpha, int bet
 
 
     if (BoardKingInMate(&board, PIECE_BLACK)) {
-        return BEST_THING_POSSIBLE - depth;
+        return BEST_THING_POSSIBLE + min(depth, 98);
     }
     else if (BoardKingInMate(&board, PIECE_WHITE)) {
-        return WORST_THING_POSSIBLE + depth;
+        return WORST_THING_POSSIBLE - min(depth, 98);
     }
     else if (boardInDraw(&board)) {
         return ONE_OF_THE_THINGS_POSSIBLE;

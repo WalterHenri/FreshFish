@@ -17,7 +17,7 @@ int main(void) {
 
 
     InitWindow(0, 0, SCREEN_TITLE);
-    SetWindowState(FLAG_FULLSCREEN_MODE);
+    //SetWindowState(FLAG_FULLSCREEN_MODE);
 
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
@@ -67,7 +67,7 @@ int main(void) {
             EndDrawing();
             break;
         case 3:
-            gamemode(&menuorboard);
+            gamemode(&board, &menuorboard);
             break;
         case 4:
             gameDificult(&menuorboard);

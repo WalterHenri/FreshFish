@@ -152,6 +152,9 @@ typedef struct {
     /* Board that is shown on screen */
     ChessBoard displayChessBoard;
 
+    /* Setup FEN string */
+    char setupFEN[100];
+
     /* Keeps track of the FEN of the previous positions */
     char prevFen[100][100];
     int  prevFenTotal;
@@ -167,7 +170,7 @@ void gameDificult(int* menuorboard);
 
 void menu(int* menuorboard);
 
-void gamemode(int* menuorboard);
+void gamemode(Board* board, int* menuorboard);
 
 void menuInit();
 

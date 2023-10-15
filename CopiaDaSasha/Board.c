@@ -225,10 +225,10 @@ void _BoardInit(Board* board) {
     board->xScale = 1;
     board->yScale = 1;
     memset(&board->movingPiece, 0, sizeof board->movingPiece);
+    board->gameState = GAME_PLAYING;
     
     // Chess Board Reset
-    memset(&board->chessBoard.move, 0, sizeof board->chessBoard.move);
-    memset(&board->chessBoard.state, 0, sizeof board->chessBoard.state);
+    memset(&board->chessBoard, 0, sizeof board->chessBoard);
     BoardLoadFEN(&board->chessBoard, BOARD_FEN_DEFAULT);
 
     // Display Board Reset
@@ -243,6 +243,36 @@ void _BoardInit(Board* board) {
     }
     board->prevFenTotal++;
     BoardLoadFEN(&board->displayChessBoard, fenString);
+}
+
+void BoardInitFEN(Board* board, char fenString[100]) {
+
+    // Board Reset
+    board->backButtonClicked = false;
+    board->viewAsWhite = true;
+    memset(&board->promotion, 0, sizeof board->promotion);
+    board->xRotating = false;
+    board->xAngle = 0;
+    board->xScale = 1;
+    board->yScale = 1;
+    memset(&board->movingPiece, 0, sizeof board->movingPiece);
+
+    // Chess Board Reset to FEN
+    memset(&board->chessBoard, 0, sizeof board->chessBoard);
+    BoardLoadFEN(&board->chessBoard, fenString);
+
+    // Display Board Reset to FEN
+    memset(&board->displayChessBoard, 0, sizeof board->displayChessBoard);
+    memset(&board->prevFen, 0, sizeof board->prevFen);
+    board->prevFenTotal = 0;
+    board->prevFenIndex = 0;
+    char fenString2[100];
+    BoardGetAsFEN(&board->chessBoard, fenString2);
+    for (int i = 0; i < 100; i++) {
+        board->prevFen[0][i] = fenString2[i];
+    }
+    board->prevFenTotal++;
+    BoardLoadFEN(&board->displayChessBoard, fenString2);
 }
 
 char* boardMoveToFen(ChessBoard board, int from, int to) {
@@ -735,7 +765,7 @@ void BoardUpdate(Board* board) {
 
 
     // SINGLEPLAYER Bot
-    if (isSinglePlayer && board->gameState == GAME_PLAYING) {
+    if (isSinglePlayer) {
         BoardBotUpdate(board);
     }
 
@@ -805,11 +835,12 @@ void BoardBotUpdate(Board* board) {
         saxaThinking = false;
         
     }
-    else {
+    else if (board->gameState == GAME_PLAYING){
+        
         threadMoveData.board = board->chessBoard;
         threadMoveData.finished = false;
         threadMoveData.depth = saxaDephtBoard;
-        //threadMoveData.depth = 5;
+        //threadMoveData.depth = 0;
         saxaMoveThreadId = CreateThread(NULL, 0, backtrackingMoveThreaded, &threadMoveData, 0, NULL);
 
         if (saxaMoveThreadId != NULL) {
@@ -1264,7 +1295,7 @@ static void generateKingMoves(ChessBoard* board, int square, bool legalMove) {
                 else if (PieceHasType(board->squares[targetSquare], PIECE_NONE)) {
                     
                     targetFile = PieceFile(square) + directionOffsets[direction][0] * 3;
-                    if (PieceHasType(board->squares[PieceSquare(targetRank, targetFile)], PIECE_NONE)) {
+                    if (direction == 7 || PieceHasType(board->squares[PieceSquare(targetRank, targetFile)], PIECE_NONE)) {
                         board->move.list[square][targetSquare] = castlingSide;
                         board->move.count++;
                     }
@@ -1460,7 +1491,7 @@ static void updateTurn(ChessBoard* board, bool updateWhoMove) {
 static bool isValidMove(ChessBoard board, int from, int to) {
     board.move.list[from][to] = MOVE_NORMAL;
 
-    BoardMakeMove(&board, from, to, 0, false);
+    BoardMakeMove(&board, from, to, PIECE_QUEEN, false);
     generateMoves(&board, false);
     return !BoardKingInCheck(&board, board.state.whoMoves);
 }
@@ -1590,6 +1621,9 @@ static void backButton(Board * board, int * menu) {
                         }
                         else if (clickOption == 2) {
                             BoardSaveFEN(&board->chessBoard);
+                            char fenString[100];
+                            BoardGetAsFEN(&board->chessBoard, fenString);
+                            BoardInitFEN(board, fenString);
                             board->backButtonClicked = false;
 
                         }
@@ -1774,6 +1808,12 @@ int boardInDraw(ChessBoard * board) {
 
 
 static void drawMateWindow(Board * board, int * menu) {
+
+    if (board->gameState == GAME_PLAYING) {
+        return;
+    }
+
+
     static bool click = false;
     static bool mouseOver = false;
 
@@ -1824,9 +1864,7 @@ static void drawMateWindow(Board * board, int * menu) {
     btnRectangle.x += windowRectangle.width / 2.f - btnRectangle.width / 2.f;
 
 
-    if (!boardInDraw(&board->chessBoard) && !BoardKingInMate(&board->chessBoard,board->chessBoard.state.whoMoves)){
-        return;   
-    }
+
 
     if (boardInDraw(&board->chessBoard)) {
         wonText = (char*)malloc(sizeof(char)* 15);
@@ -1859,6 +1897,8 @@ static void drawMateWindow(Board * board, int * menu) {
     else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
         if (click && CheckCollisionPointRec(GetMousePosition(), btnRectangle)) {
             *menu = 0;
+            saxaThinking = false;
+
             _BoardInit(board);
         }
 

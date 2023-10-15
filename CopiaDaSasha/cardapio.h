@@ -192,7 +192,7 @@ void GameBoard(int* menuorboard) {
 }
 */
 
-void gamemode(int* menuorboard) {
+void gamemode(Board* board, int* menuorboard) {
 
     float screenHeight = GetScreenHeight();
     float screenwidth = GetScreenWidth();
@@ -252,6 +252,13 @@ void gamemode(int* menuorboard) {
     if (checkTextColision(mousePoint, positionOpcoes, optionsFont, "CONTRA O COMPUTADOR", fontSizeOption, spacing)) {
         DrawTextEx(optionsFont, "CONTRA O COMPUTADOR", positionOpcoes, fontSizeOption, spacing, YELLOW);
         if (IsMouseButtonPressed(0)) {
+            saxaThinking = false;
+            isSinglePlayer = 1;
+            bool isWhite = rand() % 2 == 0;
+            saxaColor = isWhite ? PIECE_WHITE : PIECE_BLACK;
+            board->viewAsWhite = !isWhite;
+            
+
             *menuorboard = 4;
         }
     }
