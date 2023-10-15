@@ -39,15 +39,15 @@ int moveGrade(ChessBoard board, saxa_move tryMove, int depth, int alpha, int bet
 int moveGradeTest(ChessBoard board, saxa_move tryMove, int depth, int alpha, int beta);
 
 //#define PlaySound RaylibPlaySound
-
 #define WIN32_LEAN_AND_MEAN
+
 #if defined(_WIN32)           
 #define NOGDI             // All GDI defines and routines
 #define NOUSER            // All USER defines and routines
 #endif
 
 #include <windows.h> // or any library that uses Windows.h
-
+#define WIN32_LEAN_AND_MEAN
 
 
 

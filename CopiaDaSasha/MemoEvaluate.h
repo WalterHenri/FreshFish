@@ -100,16 +100,6 @@ unsigned long long int boardToKey(ChessBoard* board) {
 
     return generateHashKey(fenString);
     
-
-    /*
-    unsigned int key = 0;
-
-    for (int i = 0; i < 64; i++) {
-        int piece = board->squares[i];
-        key += piece * (PieceRank(piece) * 10 + PieceFile(piece));
-    }
-    return key;
-    */
 }
 
 struct MemoEvaluation {
@@ -119,6 +109,8 @@ struct MemoEvaluation {
 };
 
 struct MemoEvaluation* hashArray[SIZE];
+
+
 struct MemoEvaluation* dummyItem;
 struct MemoEvaluation* item;
 

@@ -41,16 +41,18 @@ void menu(int* menuorboard) {
     positionJogar.y = screenHeight / 2;
 
     DrawTextEx(optionsFont, "JOGAR", positionJogar, fontSizeOption, spacing, WHITE);
-
+    /*
     Vector2 positionOpcoes;
     positionOpcoes.x = screenwidth / 2 - MeasureTextEx(optionsFont, "OPCOES", fontSizeOption, 2).x / 2;
     positionOpcoes.y = positionJogar.y + (MeasureTextEx(optionsFont, "JOGAR", fontSizeOption, 2).y);
-
+    
     DrawTextEx(optionsFont, "OPCOES", positionOpcoes, fontSizeOption, spacing, WHITE);
+     */
 
     Vector2 positionSair;
     positionSair.x = screenwidth / 2 - MeasureTextEx(optionsFont, "SAIR", fontSizeOption, 2).x / 2;
-    positionSair.y = positionOpcoes.y + (MeasureTextEx(optionsFont, "OPCOES", fontSizeOption, 2).y);
+    positionSair.y = positionJogar.y + (MeasureTextEx(optionsFont, "JOGAR", fontSizeOption, 2).y);
+   
 
     DrawTextEx(optionsFont, "SAIR", positionSair, fontSizeOption, spacing, WHITE);
 
@@ -68,7 +70,7 @@ void menu(int* menuorboard) {
             *menuorboard = 3;
         }
     }
-
+    /*
     if (checkTextColision(mousePoint, positionOpcoes, optionsFont, "OPCOES", fontSizeOption, spacing)) {
         DrawTextEx(optionsFont, "OPCOES", positionOpcoes, fontSizeOption, spacing, YELLOW);
 
@@ -82,7 +84,7 @@ void menu(int* menuorboard) {
             selectionB = 0;
         }
     }
-
+    */
     if (checkTextColision(mousePoint, positionSair, optionsFont, "SAIR", fontSizeOption, spacing)) {
         DrawTextEx(optionsFont, "SAIR", positionSair, fontSizeOption, spacing, YELLOW);
         if (IsMouseButtonPressed(0))
@@ -92,7 +94,7 @@ void menu(int* menuorboard) {
 
     EndDrawing();
 }
-
+/*
 void GameBoard(int* menuorboard) {
 
     float screenHeight = GetScreenHeight();
@@ -193,7 +195,7 @@ void GameBoard(int* menuorboard) {
 
     EndDrawing();
 }
-
+*/
 
 void gamemode(int* menuorboard) {
 

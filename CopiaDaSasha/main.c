@@ -33,8 +33,9 @@ int main(void) {
     board = BoardInit(screenWidth, screenHeight);
 
     
-
+    InitAudioDevice();
     menuInit();
+    
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
@@ -71,10 +72,6 @@ int main(void) {
         case 4:
             gameDificult(&menuorboard);
             break;
-        case 6:
-            GameBoard(&menuorboard);
-            break;
-
         case 7:
             setupPosition(&board, &menuorboard);
             break;

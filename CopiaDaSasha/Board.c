@@ -655,37 +655,14 @@ void BoardMakeMoveHandler(Board* board, int from, int to, int promotion) {
     int moveType = board->chessBoard.move.list[from][to];
     bool sucesso = BoardMakeMove(&board->chessBoard, from, to, 0, true);
 
+    
+
     if (sucesso) {
         board->updated = true;
 
         // Tocar som?
         printf("Movimento %d\n", moveType);
-        switch (moveType) {
-        case MOVE_NONE:
-            PlaySound(sndCapture);
-            
-            break;
-        case MOVE_NORMAL:
-            PlaySound(sndCapture);
-           
-            break;
-        case MOVE_PAWN_TWO_FORWARD:
-            PlaySound(sndCapture);
-           
-            break;
-        case  MOVE_PAWN_EN_PASSANT:
-            PlaySound(sndCapture);
-            break;
-        case MOVE_PAWN_PROMOTE:
-            PlaySound(sndCapture);
-            break;
-        case MOVE_CASTLING_KING:
-            PlaySound(sndCapture);
-            break;
-        case MOVE_CASTLING_QUEEN:
-            PlaySound(sndCapture);
-            break;
-        }
+        PlaySound(sndCapture);
     }
     
 }
