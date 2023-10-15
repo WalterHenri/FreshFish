@@ -1262,8 +1262,12 @@ static void generateKingMoves(ChessBoard* board, int square, bool legalMove) {
                     /* Can't castling on captures */
                 }
                 else if (PieceHasType(board->squares[targetSquare], PIECE_NONE)) {
-                    board->move.list[square][targetSquare] = castlingSide;
-                    board->move.count++;
+                    
+                    targetFile = PieceFile(square) + directionOffsets[direction][0] * 3;
+                    if (PieceHasType(board->squares[PieceSquare(targetRank, targetFile)], PIECE_NONE)) {
+                        board->move.list[square][targetSquare] = castlingSide;
+                        board->move.count++;
+                    }
                 }
             }
             else {
