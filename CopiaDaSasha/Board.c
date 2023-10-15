@@ -653,6 +653,7 @@ int BoardPerft(Board * board, int depth) {
 
 void BoardMakeMoveHandler(Board* board, int from, int to, int promotion) {
     int moveType = board->chessBoard.move.list[from][to];
+    bool capture = board->chessBoard.squares[to] != PIECE_NONE;
     bool sucesso = BoardMakeMove(&board->chessBoard, from, to, 0, true);
 
     
@@ -660,9 +661,30 @@ void BoardMakeMoveHandler(Board* board, int from, int to, int promotion) {
     if (sucesso) {
         board->updated = true;
 
-        // Tocar som?
-        printf("Movimento %d\n", moveType);
-        PlaySound(sndCapture);
+        
+        //printf("Movimento %d\n", moveType);
+
+        // Tocar som!
+        if (capture) {
+            PlaySound(sndCapture);
+        }
+        else {
+
+            switch (moveType) {
+                case MOVE_PAWN_EN_PASSANT:
+                case MOVE_PAWN_TWO_FORWARD:
+                case MOVE_PAWN_PROMOTE:
+                case MOVE_NORMAL:
+                    PlaySound(sndMove);
+                    break;
+
+
+                case MOVE_CASTLING_KING:
+                case MOVE_CASTLING_QUEEN:
+                    PlaySound(sndMove);
+                    break;
+            }
+        }
     }
     
 }

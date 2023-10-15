@@ -23,22 +23,18 @@ typedef struct {
 saxa_move backtrackingMove(ChessBoard board, int depth, int saxa_color);
 
 /* gives value to an instant position*/
-//double evaluatePosition(ChessBoard* board);
 int evaluatePosition(ChessBoard* board);
 
 /* returns the best move of a position based on depth*/
-//saxa_move positionBestMove(ChessBoard board, int depth, float alpha, float beta);
-//saxa_move positionBestMoveTest(ChessBoard board, int depth, float alpha, float beta);
 saxa_move positionBestMove(ChessBoard board, int depth, int alpha, int beta);
 saxa_move positionBestMoveTest(ChessBoard board, int depth, int alpha, int beta);
 
 /* test values for position*/
-//double moveGrade(ChessBoard board, saxa_move tryMove, int depth, float alpha, float beta);
-//double moveGradeTest(ChessBoard board, saxa_move tryMove, int depth, float alpha, float beta);
 int moveGrade(ChessBoard board, saxa_move tryMove, int depth, int alpha, int beta);
 int moveGradeTest(ChessBoard board, saxa_move tryMove, int depth, int alpha, int beta);
 
-//#define PlaySound RaylibPlaySound
+// Windows.h Including
+// Dealing with naming and definition problems between raylib and windows
 #define WIN32_LEAN_AND_MEAN
 
 #if defined(_WIN32)           
@@ -47,16 +43,15 @@ int moveGradeTest(ChessBoard board, saxa_move tryMove, int depth, int alpha, int
 #endif
 
 #include <windows.h> // or any library that uses Windows.h
-#define WIN32_LEAN_AND_MEAN
-
-
 
 #if defined(_WIN32)           // raylib uses these names as function parameters
 #undef near
 #undef far
 #endif
 
-//#define PlaySound PlaySoundWindows
+
+
+
 
 struct ThreadMoveData {
     ChessBoard board;

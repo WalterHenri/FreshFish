@@ -14,6 +14,7 @@ Font titleFont;
 Font optionsFont;
 
 Sound sndCapture;
+Sound sndMove;
 Music musFundo;
 
 
@@ -32,5 +33,6 @@ void menuInit() {
 
 
     sndCapture = LoadSound("./sound effects/capture.mp3");
+    sndMove = LoadSound("./sound effects/move.mp3");
     musFundo = LoadMusicStream("./sound effects/musicaDeFundo.mp3");
 }
