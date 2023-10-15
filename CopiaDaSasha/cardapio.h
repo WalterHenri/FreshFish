@@ -325,7 +325,7 @@ void gameDificult(int* menuorboard) {
 
         if (IsMouseButtonPressed(0)) {
             isSinglePlayer = 1;
-            saxaDephtBoard = 1;
+            saxaDephtBoard = 2;
             *menuorboard = 1;
         }
     }
@@ -334,7 +334,7 @@ void gameDificult(int* menuorboard) {
         DrawTextEx(optionsFont, "INTERMEDIARIO", positionOpcoes, fontSizeOption, spacing, YELLOW);
         if (IsMouseButtonPressed(0)) {
             isSinglePlayer = 1;
-            saxaDephtBoard = 2;
+            saxaDephtBoard = 3;
             *menuorboard = 1;
         }
     }
@@ -344,7 +344,7 @@ void gameDificult(int* menuorboard) {
         if (IsMouseButtonPressed(0))
         {
             isSinglePlayer = 1;
-            saxaDephtBoard = 3;
+            saxaDephtBoard = 4;
             *menuorboard = 1;
         }
     }
