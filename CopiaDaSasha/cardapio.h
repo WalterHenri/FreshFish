@@ -1,13 +1,8 @@
 bool checkTextColision(Vector2 origin, Vector2 position, Font font, char* text, int fontSize, int spacing) {
 
     Vector2 size = MeasureTextEx(font, text, fontSize, spacing);
-    if ((origin.x >= position.x && origin.x <= position.x + size.x)
-        && (origin.y >= position.y - size.y / 2 && origin.y <= position.y + size.y / 2)) {
-        return true;
-    }
-    else {
-        return false;
-    }
+    return (origin.x >= position.x && origin.x <= position.x + size.x)
+        && (origin.y >= position.y && origin.y <= (position.y + size.y));
 }
 
 

@@ -17,7 +17,7 @@ int main(void) {
 
 
     InitWindow(0, 0, SCREEN_TITLE);
-    SetWindowState(FLAG_WINDOW_RESIZABLE);
+    SetWindowState(FLAG_FULLSCREEN_MODE);
 
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
