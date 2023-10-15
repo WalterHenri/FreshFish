@@ -654,7 +654,7 @@ int BoardPerft(Board * board, int depth) {
 void BoardMakeMoveHandler(Board* board, int from, int to, int promotion) {
     int moveType = board->chessBoard.move.list[from][to];
     bool capture = board->chessBoard.squares[to] != PIECE_NONE;
-    bool sucesso = BoardMakeMove(&board->chessBoard, from, to, 0, true);
+    bool sucesso = BoardMakeMove(&board->chessBoard, from, to, promotion, true);
 
     
 
