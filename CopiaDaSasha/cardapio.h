@@ -11,6 +11,9 @@ void menu(int* menuorboard) {
         usamos essas variaveis para pegar o tamanho da tela e baseamos
     o tamanho do texto das sprites e as posições nessas variáveis.
     */
+    
+    PlayMusicStream(musMenu);
+    UpdateMusicStream(musMenu);
 
     const float screenHeight = GetScreenHeight();
     const float screenwidth = GetScreenWidth();
@@ -194,6 +197,8 @@ void GameBoard(int* menuorboard) {
 
 void gamemode(Board* board, int* menuorboard) {
 
+    UpdateMusicStream(musMenu);
+
     float screenHeight = GetScreenHeight();
     float screenwidth = GetScreenWidth();
 
@@ -285,6 +290,8 @@ void gamemode(Board* board, int* menuorboard) {
 }
 
 void gameDificult(int* menuorboard) {
+
+    UpdateMusicStream(musMenu);
 
     float screenHeight = GetScreenHeight();
     float screenwidth = GetScreenWidth();

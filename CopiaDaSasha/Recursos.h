@@ -13,10 +13,10 @@ Texture2D bgLeft;
 Font titleFont;
 Font optionsFont;
 
+Sound sndCheck;
 Sound sndCapture;
 Sound sndMove;
-Music musFundo;
-
+Music musMenu;
 
 void menuInit() {
     //upload das imagens usadas
@@ -34,5 +34,7 @@ void menuInit() {
 
     sndCapture = LoadSound("./sound effects/capture.mp3");
     sndMove = LoadSound("./sound effects/move.mp3");
-    musFundo = LoadMusicStream("./sound effects/musicaDeFundo.mp3");
+ 
+    musMenu = LoadMusicStream("./sound effects/musicaDeMenu.mp3");
+    sndCheck = LoadSound("./sound effects/check.mp3");
 }

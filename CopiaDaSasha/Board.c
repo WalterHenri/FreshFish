@@ -389,7 +389,7 @@ bool BoardLoadFEN(ChessBoard* board, const char fen[BOARD_FEN_LENGTH]) {
         i += 2;
     }
     else {
-        board->state.enPassantSquare = 0;
+        board->state.enPassantSquare = -1;
         i++;
     }
 
@@ -496,7 +496,7 @@ void BoardGetAsFEN(ChessBoard* board, char fenString[100]) {
             castling_data[board->state.castlingWhite],
             castling_data[board->state.castlingBlack + 4]);
 
-    if (board->state.enPassantSquare == 0)
+    if (board->state.enPassantSquare == -1)
         strIndex += snprintf(fenString + strIndex, 100 - strIndex, "%s", " -");
     else
         strIndex += snprintf(fenString + strIndex, 100 - strIndex, " %c%d",
@@ -543,8 +543,7 @@ bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWh
     if (board->move.list[from][to] == MOVE_NONE || from == to)
         return false;
          
-    const int enPassantSquare = board->state.enPassantSquare
-        + (PieceHasColor(board->squares[from], PIECE_BLACK) ? -8 : 8);
+    const int enPassantSquare = board->state.enPassantSquare + (PieceHasColor(board->squares[from], PIECE_BLACK) ? - 8 : 8);
 
     int castlingSide;
 
@@ -556,7 +555,7 @@ bool BoardMakeMove(ChessBoard* board, int from, int to, int extra, bool updateWh
         }
     }
 
-    board->state.enPassantSquare = 0;
+    board->state.enPassantSquare = -1;
     switch (board->move.list[from][to]) {
     case MOVE_PAWN_EN_PASSANT:
         board->squares[enPassantSquare] = PIECE_NONE;
@@ -690,7 +689,6 @@ void BoardMakeMoveHandler(Board* board, int from, int to, int promotion) {
 
     if (sucesso) {
         board->updated = true;
-
         
         //printf("Movimento %d\n", moveType);
 
@@ -1111,6 +1109,7 @@ void BoardDraw(Board * board, int * menu) {
         /* Draws king above red square if in check */
         if (inCheck) {
             DrawRectangleRec(squarePosition, RED);
+            PlaySound(sndCheck);
         }
 
         /* Draw the piece, if it's a valid piece and isn't dragging it */
@@ -1173,7 +1172,7 @@ static void generateMoves(ChessBoard* board, bool onlyLegalMoves) {
         int pieceType = PieceGetType(board->squares[squareValue]);
 
         if (pieceType != PIECE_KING && pieceType != PIECE_NONE) {
-            board->pieceTypeNum[board->state.whoMoves / 8][pieceType - 2]++;
+            //board->pieceTypeNum[board->state.whoMoves / 8][pieceType - 2]++;
         }
 
         switch (pieceType) {
