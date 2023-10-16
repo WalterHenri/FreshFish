@@ -978,64 +978,9 @@ void drawPieceButtons(Board* board) {
 
 
 
-
-
-void drawBoardBackground(Board * board) {
-    const float screenHeight = GetScreenHeight();
-    const float screenwidth = GetScreenWidth();
-
-    const Color bgInformationColor = {22,40,46,255};
-    const Color bgColor = { 20,20,20,255 };
-
-    const Rectangle bg = { 0,0,screenwidth,screenHeight };
-    const Rectangle bgInformation = { board->drawPosition.x + board->squareLength * 8.5
-        , screenHeight/5, screenwidth/5,screenHeight/1.5 };
-
-    DrawRectangleRec(bg, bgColor);
-
-
-
-    DrawRectangleRec(bgInformation, bgInformationColor);
-    DrawTexture(bgLeft,0,0,WHITE);
-    
-    char fenString[100];
-    BoardGetAsFEN(&board->chessBoard, fenString);
-
-    DrawText(fenString, bgInformation.x, bgInformation.y, 10, WHITE);
-
-    char movesString[100];
-    sprintf(movesString, "%d", board->chessBoard.state.fullmoves);
-    DrawText(movesString, bgInformation.x, bgInformation.y + 20, 10, WHITE);
-
-    char hmovesString[100];
-    sprintf(hmovesString, "%d", board->chessBoard.state.halfmoves);
-    DrawText(hmovesString, bgInformation.x, bgInformation.y + 40, 10, WHITE);
-    
-}
-
-void drawEvaluationBar(Board* board) {
-    Rectangle barContainerRect = {
-       board->drawPosition.x - 40,
-       board->drawPosition.y,
-
-       20,
-       board->squareLength*8
-    };
-
-   Rectangle barRect = {
-       board->drawPosition.x - 40,
-       board->drawPosition.y,
-
-       20,
-       (board->squareLength*8*board->positionGrade)
-    };
-
-    DrawRectangleRec(barContainerRect, GRAY);
-    DrawRectangleRec(barRect, WHITE);
-
-}
-
 void BoardDraw(Board * board, int * menu) {
+    DrawTexture(bgLeft, 0, 0, WHITE);
+
     Rectangle squarePosition = {
         board->drawPosition.x + board->squareLength*4,
         board->drawPosition.y + board->squareLength*4,
@@ -1047,8 +992,7 @@ void BoardDraw(Board * board, int * menu) {
     Color colors[11] = { PINK,SKYBLUE,PURPLE,GREEN,
                         GOLD,RED,MAROON,LIME,BEIGE,BLACK,MAGENTA
     };
-    drawBoardBackground(board);
-    drawEvaluationBar(board);
+    
     Color color, opositeColor;
 
     for (int square = 0; square < 64; square++) {
