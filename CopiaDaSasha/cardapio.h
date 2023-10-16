@@ -233,16 +233,16 @@ void gamemode(Board* board, int* menuorboard) {
     DrawTextEx(optionsFont, "CONTRA O COMPUTADOR", positionOpcoes, fontSizeOption, spacing, WHITE);
 
     Vector2 positionSair;
-    positionSair.x = screenwidth / 2 - MeasureTextEx(optionsFont, "RETROCEDER", fontSizeOption, 2).x / 2;
+    positionSair.x = screenwidth / 2 - MeasureTextEx(optionsFont, "MONTAR TABULEIRO", fontSizeOption, 2).x / 2;
     positionSair.y = positionOpcoes.y + (MeasureTextEx(optionsFont, "CONTRA O COMPUTADOR", fontSizeOption, 2).y);
 
-    DrawTextEx(optionsFont, "RETROCEDER", positionSair, fontSizeOption, spacing, WHITE);
+    DrawTextEx(optionsFont, "MONTAR TABULEIRO", positionSair, fontSizeOption, spacing, WHITE);
 
     Vector2 positionSetup;
-    positionSetup.x = screenwidth / 2 - MeasureTextEx(optionsFont, "MONTAR TABULEIRO", fontSizeOption, 2).x / 2;
-    positionSetup.y = positionSair.y + (MeasureTextEx(optionsFont, "RETROCERDER", fontSizeOption, 2).y);
+    positionSetup.x = screenwidth / 2 - MeasureTextEx(optionsFont, "RETROCEDER", fontSizeOption, 2).x / 2;
+    positionSetup.y = positionSair.y + (MeasureTextEx(optionsFont, "MONTAR TABULEIRO", fontSizeOption, 2).y);
 
-    DrawTextEx(optionsFont, "MONTAR TABULEIRO", positionSetup, fontSizeOption, spacing, WHITE);
+    DrawTextEx(optionsFont, "RETROCEDER", positionSetup, fontSizeOption, spacing, WHITE);
 
 
     if (checkTextColision(mousePoint, positionJogar, optionsFont, "DOIS JOGADORES", fontSizeOption, spacing)) {
@@ -268,16 +268,16 @@ void gamemode(Board* board, int* menuorboard) {
         }
     }
 
-    if (checkTextColision(mousePoint, positionSair, optionsFont, "RETROCEDER", fontSizeOption, spacing)) {
-        DrawTextEx(optionsFont, "RETROCEDER", positionSair, fontSizeOption, spacing, YELLOW);
+    if (checkTextColision(mousePoint, positionSair, optionsFont, "MONTAR TABULEIRO", fontSizeOption, spacing)) {
+        DrawTextEx(optionsFont, "MONTAR TABULEIRO", positionSair, fontSizeOption, spacing, YELLOW);
         if (IsMouseButtonPressed(0))
-            *menuorboard = 0;
+            *menuorboard = 7;
     }
 
-    if (checkTextColision(mousePoint, positionSetup, optionsFont, "MONTAR TABULEIRO", fontSizeOption, spacing)) {
-        DrawTextEx(optionsFont, "MONTAR TABULEIRO", positionSetup, fontSizeOption, spacing, YELLOW);
+    if (checkTextColision(mousePoint, positionSetup, optionsFont, "RETROCEDER", fontSizeOption, spacing)) {
+        DrawTextEx(optionsFont, "RETROCEDER", positionSetup, fontSizeOption, spacing, YELLOW);
         if (IsMouseButtonPressed(0)) {
-            *menuorboard = 7;
+            *menuorboard = 0;
         }
     }
 
